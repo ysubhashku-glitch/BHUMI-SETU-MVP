@@ -4,6 +4,7 @@
 **Subsystem:** Property Passport Synthesis & Explainable Land Risk Intelligence Integration Verification  
 **Repository:** `https://github.com/ysubhashku-glitch/BHUMI-SETU-MVP.git`  
 **Baseline Commit SHA:** `89d7ef9` (`docs(passport): record final commit SHA in verification report (TASK-P2-06.1)`)  
+**Final Commit SHA:** `8b57720` (`test(passport): verify synthesis integration and pilot readiness (TASK-P2-06.2)`)  
 **Tested CI Run Reference:** GitHub Actions Run ID `40364954677` (`https://github.com/ysubhashku-glitch/BHUMI-SETU-MVP/actions/runs/40364954677`)  
 **Verdict:** **`CONDITIONALLY READY — EXPLICIT PREREQUISITES REMAIN`**  
 
