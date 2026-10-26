@@ -42,6 +42,7 @@ jobs:
         working-directory: ./backend
         env:
           PYTHONPATH: .
+          DATABASE_URL: sqlite:///./test_bhumisetu.db
         run: |
           uv sync --frozen --no-install-project
           uv run pytest tests -q
@@ -149,7 +150,7 @@ jobs:
 
           if [ $ELAPSED -ge $TIMEOUT ]; then
             echo "[ERROR] Infrastructure services timed out waiting for health."
-            docker compose -f docker-compose.staging.yml ps
+            docker compose -f docker-compose.staging.yml --env-file backend/.env ps
             exit 1
           fi
 
@@ -256,17 +257,21 @@ jobs:
         if: failure()
         run: |
           echo "=== DIAGNOSTIC LOG COLLECTION (FAILURE DETECTED) ==="
-          docker compose -f docker-compose.staging.yml ps
-          echo "--- DB Container Logs ---"
-          docker compose -f docker-compose.staging.yml logs db --tail=50
-          echo "--- Redis Container Logs ---"
-          docker compose -f docker-compose.staging.yml logs redis --tail=30
-          echo "--- MinIO Container Logs ---"
-          docker compose -f docker-compose.staging.yml logs minio --tail=30
-          echo "--- App Container Logs ---"
-          docker compose -f docker-compose.staging.yml logs app --tail=50
-          echo "--- Worker Container Logs ---"
-          docker compose -f docker-compose.staging.yml logs worker --tail=50
+          if [ -f backend/.env ]; then
+            docker compose -f docker-compose.staging.yml --env-file backend/.env ps || true
+            echo "--- DB Container Logs ---"
+            docker compose -f docker-compose.staging.yml --env-file backend/.env logs db --tail=50 || true
+            echo "--- Redis Container Logs ---"
+            docker compose -f docker-compose.staging.yml --env-file backend/.env logs redis --tail=30 || true
+            echo "--- MinIO Container Logs ---"
+            docker compose -f docker-compose.staging.yml --env-file backend/.env logs minio --tail=30 || true
+            echo "--- App Container Logs ---"
+            docker compose -f docker-compose.staging.yml --env-file backend/.env logs app --tail=50 || true
+            echo "--- Worker Container Logs ---"
+            docker compose -f docker-compose.staging.yml --env-file backend/.env logs worker --tail=50 || true
+          else
+            echo "[NOTICE] backend/.env was not created before failure; no active containers."
+          fi
 
       # ------------------------------------------------------------------------
       # 17. Teardown Disposable CI Services
@@ -275,6 +280,8 @@ jobs:
         if: always()
         run: |
           echo "Shutting down disposable CI staging stack and removing ephemeral test volumes..."
-          docker compose -f docker-compose.staging.yml down -v --remove-orphans
+          if [ -f backend/.env ]; then
+            docker compose -f docker-compose.staging.yml --env-file backend/.env down -v --remove-orphans || true
+          fi
           rm -f backend/.env
           echo "[OK] CI resources cleanly removed."

@@ -16,6 +16,7 @@ dependencies = [
     "mcp>=2.3.0",
     "pillow>=13.0.0",
     "psycopg2-binary>=2.9.13",
+    "psycopg[binary]>=3.2.0",
     "pydantic>=2.13.5",
     "pydantic-settings>=2.15.0",
     "pyjwt>=2.14.0",
