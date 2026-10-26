@@ -152,6 +152,7 @@ def test_live_database_crud_and_transaction_isolation():
             subdistrict_anchal_name="Danapur",
             halka_number="01",
             mauza_village_name="Digha",
+            census_village_code="245001",
             khata_number="101",
             plot_khesra_number=f"999-{test_uid[:4]}",
             recorded_area_acres=2.50,
@@ -194,7 +195,7 @@ def test_live_redis_ping_and_key_expiration():
     assert r.ping() is True
 
     test_key = f"test:staging:ping:{uuid.uuid4().hex}"
-    r.setex(test_key, 30, "integration_pong")
+    r.set(test_key, "integration_pong", ex=30)
     val = r.get(test_key)
     assert val == b"integration_pong"
     r.delete(test_key)
