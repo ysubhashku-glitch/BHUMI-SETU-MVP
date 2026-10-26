@@ -27,6 +27,15 @@ from app.models.field_task import FieldVerificationTask, TaskStatus, TaskPriorit
 from app.models.land_passport import LandPassport
 from app.models.report import LandIntelligenceReport, ReportStatus
 from app.models.audit import AuditLog
+from app.models.judicial import (
+    JudicialCase,
+    ParcelJudicialMatch,
+    CourtType,
+    JudicialCaseStatus,
+    JudicialRiskCategory,
+    ParcelMatchCategory,
+    MatchReviewStatus
+)
 
 __all__ = [
     "Base",
@@ -87,4 +96,11 @@ __all__ = [
     "LandIntelligenceReport",
     "ReportStatus",
     "AuditLog",
+    "JudicialCase",
+    "ParcelJudicialMatch",
+    "CourtType",
+    "JudicialCaseStatus",
+    "JudicialRiskCategory",
+    "ParcelMatchCategory",
+    "MatchReviewStatus",
 ]

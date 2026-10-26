@@ -143,9 +143,44 @@ class Section8ActionItem(BaseModel):
     explanation: str
     recommended_action: Optional[str] = None
 
+JUDICIAL_REPORT_LIMITATION_STATEMENT = (
+    "JUDICIAL DOCKET SEARCH LIMITATION STATEMENT:\n"
+    "1. Search coverage depends on publicly accessible eCourts and Patna High Court records and may be incomplete, delayed, or subject to portal availability.\n"
+    "2. Many civil suits do not expose parcel-level identifiers (khesra/plot, khata, mauza) in searchable top-level docket fields.\n"
+    "3. Identical or similar personal names frequently occur across Bihar revenue circles and may refer to completely different individuals.\n"
+    "4. Reported procedural case status (e.g. Pending, Disposed, Stayed) does not independently determine final legal rights or ownership.\n"
+    "5. The absence of a detected matching case does NOT prove the complete absence of pending or past litigation.\n"
+    "6. This report is strictly informational and does NOT constitute a formal legal opinion, title certificate, or substitute for independent advocate due diligence."
+)
+
+class SectionJudicialRiskItem(BaseModel):
+    match_id: str
+    cnr_number: str
+    court_name: str
+    case_type: str
+    case_number: str
+    filing_year: int
+    case_status: str
+    has_active_injunction: bool
+    risk_category: str
+    match_category: str
+    confidence_score: float
+    matched_fields: Dict[str, Any] = Field(default_factory=dict)
+    explanation: str
+    review_status: str
+    source_url: Optional[str] = None
+    retrieval_date: Optional[str] = None
+
+class SectionJudicialRiskData(BaseModel):
+    is_searched: bool
+    total_candidates_found: int
+    active_injunctions_detected: int
+    candidate_cases: List[SectionJudicialRiskItem] = Field(default_factory=list)
+    limitation_statement: str = JUDICIAL_REPORT_LIMITATION_STATEMENT
+
 class ReportDataStructure(BaseModel):
     """
-    Testable normalized data representation of all 8 report sections.
+    Testable normalized data representation of all report sections including judicial risk.
     """
     section_1_cover: Section1CoverData
     section_2_revenue: Section2RevenueData
@@ -155,5 +190,6 @@ class ReportDataStructure(BaseModel):
     section_6_consistency: List[Section6ConsistencyItem]
     section_7_evidence: List[Section7EvidenceItem]
     section_8_findings_actions: List[Section8ActionItem]
+    section_judicial_risk: Optional[SectionJudicialRiskData] = None
     verification_url: str
     verification_token: str

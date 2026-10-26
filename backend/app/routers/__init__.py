@@ -10,6 +10,7 @@ from app.routers.landamin import router as landamin_router
 from app.routers.reports import router as reports_router
 from app.routers.mcp_router import router as mcp_router
 from app.routers.health import router as health_router
+from app.routers.judicial import router as judicial_router
 
 __all__ = [
     "auth_router",
@@ -23,5 +24,6 @@ __all__ = [
     "landamin_router",
     "reports_router",
     "mcp_router",
-    "health_router"
+    "health_router",
+    "judicial_router",
 ]

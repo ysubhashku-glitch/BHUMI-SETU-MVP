@@ -20,7 +20,8 @@ from app.routers import (
     landamin_router,
     reports_router,
     mcp_router,
-    health_router
+    health_router,
+    judicial_router
 )
 
 # Configure structured logging
@@ -123,3 +124,4 @@ app.include_router(landamin_router, prefix="/api/v1")
 app.include_router(reports_router, prefix="/api/v1")
 app.include_router(mcp_router, prefix="/api/v1")
 app.include_router(health_router, prefix="/api/v1")
+app.include_router(judicial_router, prefix="/api/v1")

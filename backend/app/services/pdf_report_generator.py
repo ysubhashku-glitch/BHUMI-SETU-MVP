@@ -327,6 +327,45 @@ def generate_land_intelligence_pdf(data: ReportDataStructure) -> bytes:
 
 
     # =========================================================================
+    # SECTION JUDICIAL: JUDICIAL RISK INTELLIGENCE & LITIGATION SEARCH
+    # =========================================================================
+    if data.section_judicial_risk:
+        j_data = data.section_judicial_risk
+        pdf.section_header(
+            "Judicial Risk Intelligence — eCourts & Patna High Court Litigations",
+            f"Public court case cross-referencing ({len(j_data.candidate_cases)} candidates found, {j_data.active_injunctions_detected} active injunctions)"
+        )
+        if j_data.candidate_cases:
+            with pdf.table(col_widths=(45, 30, 30, 45, 40), text_align="L", line_height=5, headings_style=table_head) as table:
+                row = table.row()
+                row.cell("Court & CNR")
+                row.cell("Case No / Year")
+                row.cell("Risk Domain")
+                row.cell("Candidate Status")
+                row.cell("Match Evidence & Notes")
+
+                for j_item in j_data.candidate_cases[:5]:
+                    r = table.row()
+                    r.cell(f"{pdf.sanitize(j_item.court_name)[:22]}\nCNR: {j_item.cnr_number}")
+                    r.cell(f"{pdf.sanitize(j_item.case_number)}\nStatus: {j_item.case_status}")
+                    inj_tag = " [ACTIVE STAY/INJUNCTION]" if j_item.has_active_injunction else ""
+                    r.cell(f"{j_item.risk_category}{inj_tag}")
+                    r.cell(f"Category: {j_item.match_category}\nReview: {j_item.review_status}")
+                    r.cell(pdf.sanitize(j_item.explanation)[:55])
+            pdf.ln(1)
+        else:
+            pdf.set_font(pdf.unicode_font_name, size=8)
+            pdf.cell(190, 6, "No matching or candidate court proceedings detected in public court registries for this parcel.", border=1, new_x=XPos.LMARGIN, new_y=YPos.NEXT)
+            pdf.ln(1)
+
+        # Statutory Limitation Statement Box
+        pdf.set_font(pdf.unicode_font_name, size=6)
+        pdf.set_text_color(100, 116, 139)
+        pdf.multi_cell(190, 2.8, j_data.limitation_statement, border=1)
+        pdf.ln(2)
+
+
+    # =========================================================================
     # SECTION 8: FINDINGS, ACTIONS, QR CODE & DISCLAIMER
     # =========================================================================
     pdf.section_header("Section 8 — Findings, Next Actions & Cryptographic Verification", "Final synthesis, recommended due diligence actions, and tamper-evident verification")

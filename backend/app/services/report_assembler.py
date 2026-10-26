@@ -19,6 +19,7 @@ from app.models.claim import Claim, ClaimPredicate, ClaimStatus
 from app.models.finding import Finding, FindingStatus, RequiredAction
 from app.models.field_task import FieldVerificationTask, TaskStatus
 from app.models.field_survey import FieldSurvey
+from app.models.judicial import JudicialCase, ParcelJudicialMatch
 from app.models.user import User
 from app.core.exceptions import EntityNotFoundError, CrossTenantAccessError
 from app.schemas.report import (
@@ -30,7 +31,9 @@ from app.schemas.report import (
     Section5FieldData,
     Section6ConsistencyItem,
     Section7EvidenceItem,
-    Section8ActionItem
+    Section8ActionItem,
+    SectionJudicialRiskItem,
+    SectionJudicialRiskData,
 )
 from app.services.amin_service import calculate_polygon_area_acres
 
@@ -123,6 +126,11 @@ def assemble_report_data(
     section_8 = _build_section_8_actions(db, case)
 
     # -------------------------------------------------------------
+    # Section Judicial: Judicial Risk Intelligence & Litigation Docket
+    # -------------------------------------------------------------
+    section_judicial = _build_section_judicial(db, case, target_parcel)
+
+    # -------------------------------------------------------------
     # Section 1: Cover & Scope
     # -------------------------------------------------------------
     section_1 = Section1CoverData(
@@ -142,7 +150,8 @@ def assemble_report_data(
             "revenue_record_available": section_2.is_available,
             "cadastral_map_available": section_3.is_available,
             "documents_available": len(section_4) > 0,
-            "field_survey_available": section_5.is_available
+            "field_survey_available": section_5.is_available,
+            "judicial_search_performed": section_judicial.is_searched,
         },
         disclaimer=REPORT_LEGAL_DISCLAIMER
     )
@@ -156,6 +165,7 @@ def assemble_report_data(
         section_6_consistency=section_6,
         section_7_evidence=section_7,
         section_8_findings_actions=section_8,
+        section_judicial_risk=section_judicial,
         verification_url=verification_url,
         verification_token=token
     )
@@ -425,3 +435,51 @@ def _build_section_8_actions(db: Session, case: Case) -> List[Section8ActionItem
             recommended_action=f.recommended_action
         ))
     return results
+
+def _build_section_judicial(db: Session, case: Case, parcel: Optional[Parcel]) -> SectionJudicialRiskData:
+    """
+    Assembles judicial risk intelligence candidates and litigations linked to the case and target parcel.
+    Preserves epistemic distinction: an uncorroborated candidate is never displayed as a confirmed encumbrance.
+    """
+    query = db.query(ParcelJudicialMatch).filter(ParcelJudicialMatch.case_id == case.case_id)
+    if parcel:
+        query = query.filter(ParcelJudicialMatch.parcel_id == parcel.parcel_id)
+    matches = query.all()
+
+    candidates: List[SectionJudicialRiskItem] = []
+    active_injunctions = 0
+
+    for m in matches:
+        j_case = db.query(JudicialCase).filter(JudicialCase.case_id == m.judicial_case_id).first()
+        if not j_case:
+            continue
+        if j_case.has_active_injunction:
+            active_injunctions += 1
+
+        candidates.append(
+            SectionJudicialRiskItem(
+                match_id=str(m.match_id),
+                cnr_number=j_case.cnr_number,
+                court_name=j_case.court_name,
+                case_type=j_case.case_type,
+                case_number=j_case.case_number,
+                filing_year=j_case.filing_year,
+                case_status=j_case.case_status,
+                has_active_injunction=j_case.has_active_injunction,
+                risk_category=j_case.risk_category,
+                match_category=m.match_category,
+                confidence_score=float(m.confidence_score),
+                matched_fields=m.matched_fields or {},
+                explanation=m.explanation,
+                review_status=m.review_status,
+                source_url=j_case.source_url,
+                retrieval_date=j_case.retrieval_timestamp.strftime("%Y-%m-%d %H:%M:%S") if j_case.retrieval_timestamp else None,
+            )
+        )
+
+    return SectionJudicialRiskData(
+        is_searched=True,
+        total_candidates_found=len(candidates),
+        active_injunctions_detected=active_injunctions,
+        candidate_cases=candidates,
+    )

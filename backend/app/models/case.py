@@ -60,6 +60,7 @@ class Case(Base):
     field_tasks = relationship("FieldVerificationTask", back_populates="case", cascade="all, delete-orphan")
     passport = relationship("LandPassport", back_populates="case", uselist=False, cascade="all, delete-orphan")
     reports = relationship("LandIntelligenceReport", back_populates="case", cascade="all, delete-orphan")
+    judicial_matches = relationship("ParcelJudicialMatch", back_populates="case", cascade="all, delete-orphan")
 
 class CaseParcel(Base):
     __tablename__ = "case_parcels"
