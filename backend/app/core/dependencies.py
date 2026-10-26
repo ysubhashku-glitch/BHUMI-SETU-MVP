@@ -36,6 +36,11 @@ def get_current_user(
     
     return user
 
+def get_current_active_user(current_user: User = Depends(get_current_user)) -> User:
+    if not current_user.is_active:
+        raise ForbiddenError("User account is inactive.")
+    return current_user
+
 def require_roles(*allowed_roles) -> Callable[[User], User]:
     flattened = set()
     for item in allowed_roles:
