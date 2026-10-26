@@ -4,6 +4,7 @@ import hashlib
 from typing import List, Optional
 from fastapi import APIRouter, Depends, UploadFile, File, Form, status, BackgroundTasks
 from sqlalchemy.orm import Session
+from sqlalchemy.orm.attributes import flag_modified
 
 from app.database import get_db
 from app.models.user import User
@@ -758,7 +759,9 @@ def submit_kaithi_human_review(
         page.page_metadata = page.page_metadata or {}
         page.page_metadata["last_human_reviewed_at"] = now.isoformat()
         page.page_metadata["reviewed_by"] = str(current_user.user_id)
+        flag_modified(page, "page_metadata")
 
+    flag_modified(document, "document_metadata")
     db.commit()
 
     return KaithiReviewResponse(

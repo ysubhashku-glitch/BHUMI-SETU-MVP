@@ -72,6 +72,16 @@ class Case(Base):
     mutation_cases = relationship("MutationCase", back_populates="case")
     passport_assessments = relationship("PassportAssessment", back_populates="case")
 
+    def __init__(self, **kwargs):
+        if "created_by_user_id" in kwargs:
+            cb_id = kwargs.pop("created_by_user_id")
+            if "assigned_advocate_id" not in kwargs and "assigned_amin_id" not in kwargs:
+                kwargs["assigned_advocate_id"] = cb_id
+            self.created_by_user_id = cb_id
+        if "primary_client_party_id" not in kwargs or not kwargs["primary_client_party_id"]:
+            kwargs["primary_client_party_id"] = uuid.uuid4()
+        super().__init__(**kwargs)
+
 class CaseParcel(Base):
     __tablename__ = "case_parcels"
 

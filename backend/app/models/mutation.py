@@ -160,6 +160,7 @@ class MutationCase(Base):
     # Synonyms
     circle = synonym("anchal")
     resolutions = synonym("entity_resolutions")
+    khesra_number = synonym("plot_khesra_number")
 
     # Relationships
     organization = relationship("Organization")
@@ -170,6 +171,8 @@ class MutationCase(Base):
     entity_resolutions = relationship("MutationEntityResolution", back_populates="mutation_case", cascade="all, delete-orphan")
 
     def __init__(self, **kwargs):
+        if "khesra_number" in kwargs and "plot_khesra_number" not in kwargs:
+            kwargs["plot_khesra_number"] = kwargs.pop("khesra_number")
         if "filing_year" in kwargs:
             fy = kwargs["filing_year"]
             if "financial_year" not in kwargs:

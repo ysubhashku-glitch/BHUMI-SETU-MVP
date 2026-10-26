@@ -289,7 +289,7 @@ def _build_section_3_cadastral(db: Session, parcel: Optional[Parcel], case: Opti
                 findings_summary=analysis.findings_summary,
                 field_task_number=analysis.field_task.task_number if analysis.field_task else None,
                 statutory_cadastral_disclaimer=(
-                    "Geometric boundary differences represent computational spatial comparisons between independent "
+                    "STATUTORY NOTICE: Geometric boundary differences represent computational spatial comparisons between independent "
                     "survey sources, digitized map sheets, or ground observations. They do not constitute a legal survey, "
                     "nor do they establish property title, legal ownership, adverse possession, or illegal encroachment."
                 ),
@@ -336,7 +336,7 @@ def _build_section_3_cadastral(db: Session, parcel: Optional[Parcel], case: Opti
         findings_summary=analysis.findings_summary if analysis else None,
         field_task_number=analysis.field_task.task_number if (analysis and analysis.field_task) else None,
         statutory_cadastral_disclaimer=(
-            "Geometric boundary differences represent computational spatial comparisons between independent "
+            "STATUTORY NOTICE: Geometric boundary differences represent computational spatial comparisons between independent "
             "survey sources, digitized map sheets, or ground observations. They do not constitute a legal survey, "
             "nor do they establish property title, legal ownership, adverse possession, or illegal encroachment."
         ) if overlay_performed else None,

@@ -51,6 +51,7 @@ class Parcel(Base):
     mauza = synonym("mauza_village_name")
     khesra_number = synonym("plot_khesra_number")
     recorded_area_acre = synonym("recorded_area_acres")
+    area_acres = synonym("recorded_area_acres")
     land_classification = synonym("land_nature")
 
     organization = relationship("Organization", back_populates="parcels")
@@ -109,6 +110,8 @@ class Parcel(Base):
         if "khata_number" not in kwargs:
             kwargs["khata_number"] = "0"
 
+        if "area_acres" in kwargs and "recorded_area_acres" not in kwargs:
+            kwargs["recorded_area_acres"] = kwargs.pop("area_acres")
         if "recorded_area_acre" in kwargs and "recorded_area_acres" not in kwargs:
             kwargs["recorded_area_acres"] = kwargs.pop("recorded_area_acre")
         if "recorded_area_acres" not in kwargs:
