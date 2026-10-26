@@ -396,6 +396,18 @@ class EvidenceReconciliationEngine:
                     "remedy_action": "Repair polygon topology using ST_MakeValid or boundary clean-up.",
                     "is_blocking": True,
                 })
+            elif overlay_analysis.discrepancy_taxonomy in (
+                "INSUFFICIENT_SPATIAL_REFERENCE",
+                "INSUFFICIENT_ACCURACY_INFORMATION",
+            ):
+                evidence_gaps.append({
+                    "subsystem": "CADASTRAL_SPATIAL",
+                    "gap_code": "GAP-SPA-INSUFFICIENT-REFERENCE",
+                    "description": f"Cadastral overlay has insufficient georeferencing accuracy: {overlay_analysis.discrepancy_taxonomy}.",
+                    "impact_on_assessment": "Spatial overlay cannot be reliably verified without adequate reference information.",
+                    "remedy_action": "Georeference cadastral sheet with ground control points and explicit CRS transformation.",
+                    "is_blocking": True,
+                })
             elif crs_declared not in RECOGNIZED_REGIONAL_CRSS:
                 evidence_gaps.append({
                     "subsystem": "CADASTRAL_SPATIAL",
@@ -436,18 +448,6 @@ class EvidenceReconciliationEngine:
                     ),
                     "impact_on_assessment": "Spatial displacement exceeds acceptable cadastral boundary tolerance.",
                     "remedy_action": "Recalibrate georeferencing using verified ground survey control points.",
-                    "is_blocking": True,
-                })
-            elif overlay_analysis.discrepancy_taxonomy in (
-                "INSUFFICIENT_SPATIAL_REFERENCE",
-                "INSUFFICIENT_ACCURACY_INFORMATION",
-            ):
-                evidence_gaps.append({
-                    "subsystem": "CADASTRAL_SPATIAL",
-                    "gap_code": "GAP-SPA-INSUFFICIENT-REFERENCE",
-                    "description": f"Cadastral overlay has insufficient georeferencing accuracy: {overlay_analysis.discrepancy_taxonomy}.",
-                    "impact_on_assessment": "Spatial overlay cannot be reliably verified without adequate reference information.",
-                    "remedy_action": "Georeference cadastral sheet with ground control points and explicit CRS transformation.",
                     "is_blocking": True,
                 })
             else:
@@ -516,17 +516,19 @@ class EvidenceReconciliationEngine:
         ).order_by(FieldSurvey.created_at.desc()).first()
 
         if field_survey:
+            amin_ident = getattr(field_survey, "amin_user_id", None) or getattr(field_survey, "surveyor_party_id", "UNKNOWN")
+            gps_count = getattr(field_survey, "gps_reading_count", None)
             facts.append({
                 "subsystem": "FIELD_SURVEY",
                 "fact_category": "GROUND_POSSESSION_OBSERVATION",
-                "source_reference": f"Field Survey {field_survey.survey_id} by Amin {field_survey.amin_user_id}",
+                "source_reference": f"Field Survey {field_survey.survey_id} by Amin {amin_ident}",
                 "source_retrieval_date": field_survey.created_at,
                 "applicable_date": field_survey.created_at,
                 "raw_value": {
                     "measured_area": float(field_survey.measured_area_acres) if field_survey.measured_area_acres else None,
                     "possessor": field_survey.physical_possessor_name,
                     "road_access": field_survey.road_access_type,
-                    "gps_points_count": field_survey.gps_reading_count,
+                    "gps_points_count": gps_count,
                 },
                 "normalized_value": {
                     "possessor_name": field_survey.physical_possessor_name,

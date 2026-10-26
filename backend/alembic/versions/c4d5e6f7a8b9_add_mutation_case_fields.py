@@ -33,8 +33,17 @@ def upgrade() -> None:
     op.add_column('mutation_events', sa.Column('provenance_type', sa.String(length=64), nullable=True, server_default='OFFICIAL_GOVERNMENT_PORTAL'))
     op.alter_column('mutation_events', 'org_id', existing_type=app.models.base.GUID(length=36), nullable=True)
 
+    # 3. mutation_reconciliation_runs extensions
+    op.add_column('mutation_reconciliation_runs', sa.Column('records_duplicate', sa.Integer(), nullable=True, server_default='0'))
+    op.add_column('mutation_reconciliation_runs', sa.Column('records_rejected', sa.Integer(), nullable=True, server_default='0'))
+    op.add_column('mutation_reconciliation_runs', sa.Column('records_unresolved', sa.Integer(), nullable=True, server_default='0'))
+
 
 def downgrade() -> None:
+    op.drop_column('mutation_reconciliation_runs', 'records_unresolved')
+    op.drop_column('mutation_reconciliation_runs', 'records_rejected')
+    op.drop_column('mutation_reconciliation_runs', 'records_duplicate')
+
     op.alter_column('mutation_events', 'org_id', existing_type=app.models.base.GUID(length=36), nullable=False)
     op.drop_column('mutation_events', 'provenance_type')
     op.drop_column('mutation_events', 'remarks')

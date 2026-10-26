@@ -1,6 +1,6 @@
 import uuid
 import sqlalchemy as sa
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, synonym
 from app.database import Base
 from app.models.base import GUID, JSONCompatible, utc_now
 
@@ -15,6 +15,7 @@ class TaskStatus(str):
     UNDER_REVIEW = "UNDER_REVIEW"
     REVISION_REQUESTED = "REVISION_REQUESTED"
     REVIEW_ACCEPTED = "REVIEW_ACCEPTED"
+    COMPLETED = "COMPLETED"
     REJECTED = "REJECTED"
     CLOSED = "CLOSED"
     CANCELLED = "CANCELLED"
@@ -83,3 +84,14 @@ class FieldVerificationTask(Base):
     assigned_by = relationship("User", foreign_keys=[assigned_by_user_id])
     reviewer = relationship("User", foreign_keys=[reviewer_user_id])
     survey = relationship("FieldSurvey")
+
+    assigned_to_user_id = synonym("assigned_amin_id")
+
+    def __init__(self, **kwargs):
+        if "assigned_to_user_id" in kwargs and "assigned_amin_id" not in kwargs:
+            kwargs["assigned_amin_id"] = kwargs.pop("assigned_to_user_id")
+        if "title" not in kwargs:
+            kwargs["title"] = kwargs.get("task_number", "Field Verification Task")
+        if "reason" not in kwargs:
+            kwargs["reason"] = "Field verification task"
+        super().__init__(**kwargs)

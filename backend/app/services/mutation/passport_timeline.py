@@ -119,17 +119,25 @@ class PropertyPassportTimelineBuilder:
 
             for ev in mc.events:
                 t_stamp = ev.reported_event_timestamp or ev.ingested_timestamp
-                stage = EVENT_STAGE_MAP.get(ev.event_type, "PROCEDURAL_EVENT")
+                ev_type_str = ev.event_type.value if hasattr(ev.event_type, "value") else str(ev.event_type)
+                stage = EVENT_STAGE_MAP.get(ev.event_type)
+                if stage is None:
+                    for k, v in EVENT_STAGE_MAP.items():
+                        if getattr(k, "value", str(k)) == ev_type_str:
+                            stage = v
+                            break
+                if stage is None:
+                    stage = "PROCEDURAL_EVENT"
 
                 is_conflict = (mc.normalized_status == MutationStatus.CONFLICTING_EVIDENCE)
                 entry = MutationTimelineEntry(
                     entry_id=str(ev.mutation_event_id),
                     timestamp=t_stamp,
                     stage=stage,
-                    event_type=ev.event_type.value,
+                    event_type=ev_type_str,
                     case_number=mc.case_number,
                     authority=ev.source_authority,
-                    summary=ev.action_taken or f"Event {ev.event_type.value} recorded",
+                    summary=ev.action_taken or f"Event {ev_type_str} recorded",
                     details={
                         "raw_payload": ev.raw_payload,
                         "extracted_fields": ev.extracted_fields,

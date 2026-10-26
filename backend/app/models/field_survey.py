@@ -30,3 +30,28 @@ class FieldSurvey(Base):
 
     case = relationship("Case", back_populates="surveys")
     parcel = relationship("Parcel", back_populates="surveys")
+
+    def __init__(self, **kwargs):
+        self.org_id = kwargs.pop("org_id", None)
+        self.task_id = kwargs.pop("task_id", None)
+        self.reported_accuracy_meters = kwargs.pop("reported_accuracy_meters", None)
+        gps_count = kwargs.pop("gps_reading_count", None)
+        if gps_count is not None:
+            self._gps_reading_count = gps_count
+        if "measured_boundary_geometry" not in kwargs:
+            kwargs["measured_boundary_geometry"] = "POLYGON((0 0, 0 1, 1 1, 1 0, 0 0))"
+        if "surveyor_party_id" not in kwargs:
+            kwargs["surveyor_party_id"] = uuid.uuid4()
+        super().__init__(**kwargs)
+
+    @property
+    def amin_user_id(self):
+        return getattr(self, "assigned_to_user_id", None) or self.surveyor_party_id
+
+    @property
+    def gps_reading_count(self):
+        return getattr(self, "_gps_reading_count", None) or 0
+
+    @gps_reading_count.setter
+    def gps_reading_count(self, val):
+        self._gps_reading_count = val

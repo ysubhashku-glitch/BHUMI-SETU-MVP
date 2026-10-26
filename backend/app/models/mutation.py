@@ -479,9 +479,22 @@ class MutationReconciliationRun(Base):
     records_observed = sa.Column(sa.Integer, nullable=False, default=0)
     records_new = sa.Column(sa.Integer, nullable=False, default=0)
     records_updated = sa.Column(sa.Integer, nullable=False, default=0)
+    records_duplicate = sa.Column(sa.Integer, nullable=True, default=0)
+    records_rejected = sa.Column(sa.Integer, nullable=True, default=0)
+    records_unresolved = sa.Column(sa.Integer, nullable=True, default=0)
     records_conflicting = sa.Column(sa.Integer, nullable=False, default=0)
 
     status = sa.Column(sa.String(32), nullable=False, default="IN_PROGRESS")
-    error_summary = sa.Column(sa.Text, nullable=True)
+    error_summary = sa.Column(JSONCompatible, nullable=True)
 
     created_at = sa.Column(sa.DateTime(timezone=True), default=utc_now, nullable=False)
+
+    started_at = synonym("start_time")
+    completed_at = synonym("completion_time")
+
+    def __init__(self, **kwargs):
+        if "started_at" in kwargs and "start_time" not in kwargs:
+            kwargs["start_time"] = kwargs.pop("started_at")
+        if "completed_at" in kwargs and "completion_time" not in kwargs:
+            kwargs["completion_time"] = kwargs.pop("completed_at")
+        super().__init__(**kwargs)

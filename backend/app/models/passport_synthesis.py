@@ -242,6 +242,10 @@ class AssessmentEvidenceGap(Base):
 
     assessment = relationship("PassportAssessment", back_populates="evidence_gaps")
 
+    @property
+    def title(self) -> str:
+        return self.gap_code
+
     def __init__(self, **kwargs):
         if "dimension" in kwargs and "subsystem" not in kwargs:
             val = kwargs.pop("dimension")

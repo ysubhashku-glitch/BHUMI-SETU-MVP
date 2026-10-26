@@ -1,6 +1,6 @@
 import uuid
 import sqlalchemy as sa
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, synonym
 from app.database import Base
 from app.models.base import GUID, JSONCompatible, utc_now
 
@@ -112,11 +112,21 @@ class Document(Base):
     evidence_spans = relationship("EvidenceSpan", back_populates="document", cascade="all, delete-orphan")
     extracted_fields = relationship("ExtractedField", back_populates="document", cascade="all, delete-orphan")
 
+    category = synonym("document_category")
+    stored_path = synonym("storage_uri")
+
     def __init__(self, **kwargs):
         case_id = kwargs.pop("case_id", None)
+        parcel_id = kwargs.pop("parcel_id", None)
+        if "stored_path" in kwargs and "storage_uri" not in kwargs:
+            kwargs["storage_uri"] = kwargs.pop("stored_path")
+        if "category" in kwargs and "document_category" not in kwargs:
+            kwargs["document_category"] = kwargs.pop("category")
         super().__init__(**kwargs)
         if case_id:
             self.case_id = case_id
+        if parcel_id:
+            self.parcel_id = parcel_id
 
 class DocumentVersion(Base):
     __tablename__ = "document_versions"

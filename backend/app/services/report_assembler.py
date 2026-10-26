@@ -810,7 +810,7 @@ def _build_section_synthesis(db: Session, case: Case, parcel: Optional[Parcel]) 
             gap_id=str(g.gap_id),
             dimension=g.dimension.value if hasattr(g.dimension, "value") else str(g.dimension),
             gap_code=g.gap_code,
-            title=g.title,
+            title=getattr(g, "title", None) or g.gap_code,
             description=g.description,
             remedy_action=g.remedy_action or "Source missing documentation or schedule field inspection.",
         )
