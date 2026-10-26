@@ -4,6 +4,7 @@
 **Subsystem:** Property Passport Synthesis & Explainable Land Risk Intelligence Verification  
 **Repository:** `https://github.com/ysubhashku-glitch/BHUMI-SETU-MVP.git`  
 **Starting Commit SHA:** `b7f9df7` (`feat(passport): implement comprehensive property passport synthesis and explainable land risk intelligence (TASK-P2-06)`)  
+**Final Commit SHA:** `e8095c9` (`feat(passport): verify, calibrate and harden property passport synthesis engine (TASK-P2-06.1)`)  
 **Status:** **AUDITED, HARDENED & VERIFIED**  
 
 ---
