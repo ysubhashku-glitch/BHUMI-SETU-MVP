@@ -22,7 +22,8 @@ from app.routers import (
     mcp_router,
     health_router,
     judicial_router,
-    valuation_router
+    valuation_router,
+    spatial_overlay_router,
 )
 
 # Configure structured logging
@@ -119,6 +120,13 @@ def valuation_calculator_ui():
         return FileResponse(static_file, media_type="text/html")
     return JSONResponse(status_code=404, content={"message": "Valuation calculator UI not found."})
 
+@app.get("/ui/cadastral-overlay", tags=["UI"])
+def cadastral_overlay_ui():
+    static_file = os.path.join(os.path.dirname(__file__), "static", "cadastral_overlay.html")
+    if os.path.exists(static_file):
+        return FileResponse(static_file, media_type="text/html")
+    return JSONResponse(status_code=404, content={"message": "Cadastral overlay UI not found."})
+
 # API v1 Router Registration
 app.include_router(auth_router, prefix="/api/v1")
 app.include_router(cases_router, prefix="/api/v1")
@@ -134,3 +142,5 @@ app.include_router(mcp_router, prefix="/api/v1")
 app.include_router(health_router, prefix="/api/v1")
 app.include_router(judicial_router, prefix="/api/v1")
 app.include_router(valuation_router, prefix="/api/v1")
+app.include_router(spatial_overlay_router, prefix="/api/v1")
+

@@ -47,6 +47,21 @@ from app.models.valuation import (
     DiscrepancyStatus,
     BuyerGenderCategory,
 )
+from app.models.spatial_overlay import (
+    CadastralMapAsset,
+    GeoreferenceSession,
+    CadastralParcelGeometry,
+    BoundaryOverlayAnalysis,
+    BoundaryDiscrepancyReview,
+    CadastralAssetFormat,
+    CadastralSourceType,
+    GeoreferenceTransformMethod,
+    GeoreferenceSessionStatus,
+    ParcelGeometryRole,
+    DiscrepancyTaxonomy,
+    DiscrepancySeverity,
+    BoundaryReviewDecision,
+)
 
 __all__ = [
     "Base",
@@ -123,4 +138,17 @@ __all__ = [
     "ScheduleVerificationStatus",
     "DiscrepancyStatus",
     "BuyerGenderCategory",
+    "CadastralMapAsset",
+    "GeoreferenceSession",
+    "CadastralParcelGeometry",
+    "BoundaryOverlayAnalysis",
+    "BoundaryDiscrepancyReview",
+    "CadastralAssetFormat",
+    "CadastralSourceType",
+    "GeoreferenceTransformMethod",
+    "GeoreferenceSessionStatus",
+    "ParcelGeometryRole",
+    "DiscrepancyTaxonomy",
+    "DiscrepancySeverity",
+    "BoundaryReviewDecision",
 ]

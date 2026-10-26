@@ -21,6 +21,7 @@ from app.models.field_task import FieldVerificationTask, TaskStatus
 from app.models.field_survey import FieldSurvey
 from app.models.judicial import JudicialCase, ParcelJudicialMatch
 from app.models.valuation import PropertyValuation, MVRSchedule
+from app.models.spatial_overlay import BoundaryOverlayAnalysis, CadastralParcelGeometry
 from app.models.user import User
 from app.core.exceptions import EntityNotFoundError, CrossTenantAccessError
 from app.schemas.report import (
@@ -99,9 +100,9 @@ def assemble_report_data(
     section_2 = _build_section_2_revenue(db, case, target_parcel)
 
     # -------------------------------------------------------------
-    # Section 3: Cadastral Map & Spatial (P1-02)
+    # Section 3: Cadastral Map & Spatial (P1-02 & P2-04)
     # -------------------------------------------------------------
-    section_3 = _build_section_3_cadastral(db, target_parcel)
+    section_3 = _build_section_3_cadastral(db, target_parcel, case)
 
     # -------------------------------------------------------------
     # Section 4: Document Intelligence (P1-03)
@@ -157,6 +158,7 @@ def assemble_report_data(
         data_availability_summary={
             "revenue_record_available": section_2.is_available,
             "cadastral_map_available": section_3.is_available,
+            "cadastral_overlay_performed": section_3.overlay_performed,
             "documents_available": len(section_4) > 0,
             "field_survey_available": section_5.is_available,
             "judicial_search_performed": section_judicial.is_searched,
@@ -217,8 +219,49 @@ def _build_section_2_revenue(db: Session, case: Case, parcel: Optional[Parcel]) 
         is_available=True
     )
 
-def _build_section_3_cadastral(db: Session, parcel: Optional[Parcel]) -> Section3CadastralData:
+def _build_section_3_cadastral(db: Session, parcel: Optional[Parcel], case: Optional[Case] = None) -> Section3CadastralData:
+    # Check for BoundaryOverlayAnalysis for this parcel or case
+    analysis = None
+    if parcel:
+        analysis = db.query(BoundaryOverlayAnalysis).filter(
+            BoundaryOverlayAnalysis.parcel_id == parcel.parcel_id
+        ).order_by(BoundaryOverlayAnalysis.created_at.desc()).first()
+    if not analysis and case:
+        analysis = db.query(BoundaryOverlayAnalysis).filter(
+            BoundaryOverlayAnalysis.case_id == case.case_id
+        ).order_by(BoundaryOverlayAnalysis.created_at.desc()).first()
+
+    overlay_performed = analysis is not None
+
     if not parcel or not parcel.authoritative_boundary:
+        if overlay_performed and analysis:
+            return Section3CadastralData(
+                is_available=True,
+                crs=analysis.analysis_crs,
+                geometry_validation_status="OVERLAY_ANALYZED",
+                recorded_area_acres=None,
+                calculated_area_acres=round(analysis.union_area_sqm / 4046.8564224, 4),
+                area_delta_acres=round(analysis.symmetric_diff_area_sqm / 4046.8564224, 4),
+                variance_percentage=analysis.area_delta_percentage,
+                map_image_available=True,
+                spatial_provenance=f"Cadastral Vector Overlay Engine ({analysis.algorithm_version})",
+                limitation_notes="Cadastral map geometry analyzed via vector overlay; does not certify legal boundary ridge.",
+                overlay_performed=True,
+                baseline_geometry_label=analysis.baseline_geometry.geometry_label if analysis.baseline_geometry else None,
+                comparison_geometry_label=analysis.comparison_geometry.geometry_label if analysis.comparison_geometry else None,
+                iou_score=analysis.iou_score,
+                centroid_displacement_meters=analysis.centroid_displacement_meters,
+                hausdorff_distance_meters=analysis.hausdorff_distance_meters,
+                discrepancy_status=analysis.discrepancy_status,
+                discrepancy_severity=analysis.discrepancy_severity,
+                findings_summary=analysis.findings_summary,
+                field_task_number=analysis.field_task.task_number if analysis.field_task else None,
+                statutory_cadastral_disclaimer=(
+                    "Geometric boundary differences represent computational spatial comparisons between independent "
+                    "survey sources, digitized map sheets, or ground observations. They do not constitute a legal survey, "
+                    "nor do they establish property title, legal ownership, adverse possession, or illegal encroachment."
+                ),
+            )
         return Section3CadastralData(
             is_available=False,
             limitation_notes="Cadastral map geometry not digitized or unavailable in DLRS Bhu-Naksha cache."
@@ -249,8 +292,24 @@ def _build_section_3_cadastral(db: Session, parcel: Optional[Parcel]) -> Section
         variance_percentage=var_pct,
         map_image_available=True,
         spatial_provenance="Directorate of Land Records & Survey (DLRS), Bihar Bhu-Naksha GIS",
-        limitation_notes="Cadastral polygon reflects official survey boundary; does not confirm physical ridge possession."
+        limitation_notes="Cadastral polygon reflects official survey boundary; does not confirm physical ridge possession.",
+        overlay_performed=overlay_performed,
+        baseline_geometry_label=analysis.baseline_geometry.geometry_label if (analysis and analysis.baseline_geometry) else None,
+        comparison_geometry_label=analysis.comparison_geometry.geometry_label if (analysis and analysis.comparison_geometry) else None,
+        iou_score=analysis.iou_score if analysis else None,
+        centroid_displacement_meters=analysis.centroid_displacement_meters if analysis else None,
+        hausdorff_distance_meters=analysis.hausdorff_distance_meters if analysis else None,
+        discrepancy_status=analysis.discrepancy_status if analysis else None,
+        discrepancy_severity=analysis.discrepancy_severity if analysis else None,
+        findings_summary=analysis.findings_summary if analysis else None,
+        field_task_number=analysis.field_task.task_number if (analysis and analysis.field_task) else None,
+        statutory_cadastral_disclaimer=(
+            "Geometric boundary differences represent computational spatial comparisons between independent "
+            "survey sources, digitized map sheets, or ground observations. They do not constitute a legal survey, "
+            "nor do they establish property title, legal ownership, adverse possession, or illegal encroachment."
+        ) if overlay_performed else None,
     )
+
 
 def _build_section_4_documents(db: Session, case: Case) -> List[Section4DocumentItem]:
     docs = db.query(Document).filter(Document.org_id == case.org_id).all()

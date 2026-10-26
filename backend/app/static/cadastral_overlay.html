@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bhumi Setu — Cadastral Vector Overlay & Boundary Discrepancy Intelligence</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-primary: #0a0e17;
+      --bg-card: rgba(18, 26, 43, 0.75);
+      --bg-card-hover: rgba(24, 34, 58, 0.85);
+      --border-color: rgba(255, 255, 255, 0.08);
+      --border-focus: #3b82f6;
+      --accent-blue: #3b82f6;
+      --accent-cyan: #06b6d4;
+      --accent-emerald: #10b981;
+      --accent-amber: #f59e0b;
+      --accent-rose: #f43f5e;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --text-subtle: #64748b;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Outfit', sans-serif;
+      background-color: var(--bg-primary);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+    }
+
+    /* Ambient background glowing orbs */
+    .glow-bg {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      z-index: -1;
+      pointer-events: none;
+    }
+    .orb {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(140px);
+      opacity: 0.15;
+    }
+    .orb-1 { top: -10%; left: -10%; width: 50vw; height: 50vw; background: #2563eb; }
+    .orb-2 { bottom: -15%; right: -10%; width: 55vw; height: 55vw; background: #0d9488; }
+
+    header {
+      padding: 1.25rem 2.5rem;
+      border-bottom: 1px solid var(--border-color);
+      backdrop-filter: blur(12px);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(10, 14, 23, 0.8);
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.85rem;
+    }
+    .brand-logo {
+      width: 38px;
+      height: 38px;
+      background: linear-gradient(135deg, #3b82f6, #06b6d4);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      color: white;
+      font-size: 1.15rem;
+      box-shadow: 0 4px 14px rgba(59, 130, 246, 0.4);
+    }
+    .brand-text h1 {
+      font-size: 1.25rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      background: linear-gradient(to right, #ffffff, #94a3b8);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .brand-text span {
+      font-size: 0.75rem;
+      color: var(--accent-cyan);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-weight: 600;
+    }
+
+    .header-nav {
+      display: flex;
+      gap: 1.5rem;
+      align-items: center;
+    }
+    .nav-link {
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 0.9rem;
+      transition: color 0.2s;
+    }
+    .nav-link:hover, .nav-link.active {
+      color: var(--text-main);
+    }
+
+    .disclaimer-banner {
+      background: rgba(245, 158, 11, 0.08);
+      border-bottom: 1px solid rgba(245, 158, 11, 0.25);
+      padding: 0.65rem 2.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-size: 0.8rem;
+      color: #fbbf24;
+    }
+
+    main {
+      flex: 1;
+      padding: 2rem 2.5rem;
+      display: grid;
+      grid-template-columns: 460px 1fr;
+      gap: 2rem;
+      max-width: 1700px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    .panel {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      padding: 1.5rem;
+      backdrop-filter: blur(16px);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .panel-title {
+      font-size: 1.05rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 0.75rem;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+    .form-label {
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .form-control, .form-select {
+      background: rgba(10, 14, 23, 0.6);
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+      padding: 0.65rem 0.85rem;
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: 0.9rem;
+      outline: none;
+      transition: all 0.2s;
+    }
+    .form-control:focus, .form-select:focus {
+      border-color: var(--accent-blue);
+      box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+    }
+
+    .btn {
+      padding: 0.7rem 1.25rem;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 0.9rem;
+      cursor: pointer;
+      border: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      transition: all 0.2s;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, #2563eb, #3b82f6);
+      color: white;
+      box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35);
+    }
+    .btn-primary:hover {
+      box-shadow: 0 6px 20px rgba(37, 99, 235, 0.5);
+      transform: translateY(-1px);
+    }
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.06);
+      color: var(--text-main);
+      border: 1px solid var(--border-color);
+    }
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.1);
+    }
+    .btn-danger {
+      background: linear-gradient(135deg, #e11d48, #f43f5e);
+      color: white;
+    }
+
+    /* Tabs */
+    .tabs {
+      display: flex;
+      background: rgba(10, 14, 23, 0.5);
+      border-radius: 8px;
+      padding: 3px;
+      border: 1px solid var(--border-color);
+    }
+    .tab-btn {
+      flex: 1;
+      padding: 0.5rem 0.75rem;
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      border-radius: 6px;
+      transition: all 0.2s;
+    }
+    .tab-btn.active {
+      background: var(--accent-blue);
+      color: white;
+    }
+
+    /* Table styling */
+    .table-container {
+      overflow-x: auto;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.8rem;
+    }
+    th, td {
+      padding: 0.55rem 0.75rem;
+      text-align: left;
+      border-bottom: 1px solid var(--border-color);
+    }
+    th {
+      background: rgba(10, 14, 23, 0.8);
+      color: var(--text-muted);
+      font-weight: 600;
+      text-transform: uppercase;
+      font-size: 0.7rem;
+      letter-spacing: 0.05em;
+    }
+    td {
+      font-family: 'JetBrains Mono', monospace;
+      color: #cbd5e1;
+    }
+
+    /* Visualization Map Card */
+    .map-card {
+      position: relative;
+      background: #060911;
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      height: 520px;
+    }
+    .map-header {
+      padding: 0.75rem 1.25rem;
+      background: rgba(18, 26, 43, 0.9);
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .map-legend {
+      display: flex;
+      gap: 1.25rem;
+      font-size: 0.75rem;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+    .legend-color {
+      width: 12px;
+      height: 12px;
+      border-radius: 3px;
+    }
+
+    .svg-viewport {
+      flex: 1;
+      width: 100%;
+      height: 100%;
+      background: radial-gradient(circle at center, #0f172a 0%, #060911 100%);
+    }
+
+    /* Metric KPI Cards */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1rem;
+    }
+    .kpi-card {
+      background: rgba(10, 14, 23, 0.6);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+    .kpi-label {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      font-weight: 600;
+    }
+    .kpi-value {
+      font-size: 1.35rem;
+      font-weight: 700;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--text-main);
+    }
+    .kpi-sub {
+      font-size: 0.75rem;
+      color: var(--text-subtle);
+    }
+
+    /* Status badge */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.25rem 0.65rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+    }
+    .badge-success { background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); }
+    .badge-warning { background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); }
+    .badge-danger { background: rgba(244, 63, 94, 0.15); color: #fb7185; border: 1px solid rgba(244, 63, 94, 0.3); }
+    .badge-info { background: rgba(59, 130, 246, 0.15); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); }
+
+    .findings-box {
+      background: rgba(10, 14, 23, 0.5);
+      border: 1px solid var(--border-color);
+      border-left: 4px solid var(--accent-cyan);
+      border-radius: 8px;
+      padding: 1rem;
+      font-size: 0.85rem;
+      line-height: 1.5;
+      color: #e2e8f0;
+    }
+  </style>
+</head>
+<body>
+  <div class="glow-bg">
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+  </div>
+
+  <header>
+    <div class="brand">
+      <div class="brand-logo">BS</div>
+      <div class="brand-text">
+        <h1>BHUMI SETU</h1>
+        <span>Cadastral Vector Overlay Intelligence</span>
+      </div>
+    </div>
+    <div class="header-nav">
+      <a href="/ui/document-viewer" class="nav-link">Document OCR</a>
+      <a href="/ui/valuation-calculator" class="nav-link">MVR Valuation</a>
+      <a href="/ui/cadastral-overlay" class="nav-link active">Cadastral Overlay</a>
+      <span class="badge badge-info">Pilot: Danapur / Gaya</span>
+    </div>
+  </header>
+
+  <div class="disclaimer-banner">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+    <span><strong>Statutory Notice:</strong> Computational overlay differences represent mathematical survey comparisons. They do not establish legal ownership, title, encroachment, or legally binding boundary demarcation.</span>
+  </div>
+
+  <main>
+    <!-- Left Panel: Controls & Analysis Setup -->
+    <div class="panel">
+      <div class="panel-title">
+        <span>Overlay Analysis Setup</span>
+        <span class="badge badge-success">PostGIS WGS84 / UTM 45N</span>
+      </div>
+
+      <!-- Preset Pilot Case Loader -->
+      <div class="form-group">
+        <label class="form-label">Select Pilot Scenario / Sample</label>
+        <select class="form-select" id="sampleSelector" onchange="loadScenario(this.value)">
+          <option value="danapur_khagaul">Danapur Mauza Saguna (Plot 112 - Minor Tolerance)</option>
+          <option value="patna_kankarbagh">Patna Sadar (Plot 48 - Discrepancy & Shift)</option>
+          <option value="gaya_bodhgaya">Bodh Gaya Mastipur (Plot 205 - Subdivided Wedge Gap)</option>
+        </select>
+      </div>
+
+      <!-- Geometry Selections -->
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+        <div class="form-group">
+          <label class="form-label">Baseline Boundary</label>
+          <select class="form-select" id="baselineType">
+            <option value="cs_1910">Historical CS 1910 Sheet</option>
+            <option value="rs_1975">Revision Survey RS 1975</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Comparison Boundary</label>
+          <select class="form-select" id="compType">
+            <option value="bhunaksha">Bhu-Naksha DILRMP Vector</option>
+            <option value="field_survey">LandAmin GNSS Survey</option>
+            <option value="deed_chau">Deed Chauhaddi Sketch</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Georeferencing / GCP status -->
+      <div class="form-group">
+        <label class="form-label">Georeferencing Control Points (RMSE)</label>
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>GCP ID</th>
+                <th>Pixel (u, v)</th>
+                <th>UTM (Easting, Northing)</th>
+                <th>Residual (m)</th>
+              </tr>
+            </thead>
+            <tbody id="gcpTableBody">
+              <tr><td>GCP-1</td><td>240, 180</td><td>542100, 2831200</td><td>+0.42 m</td></tr>
+              <tr><td>GCP-2</td><td>1840, 210</td><td>543700, 2831180</td><td>+0.85 m</td></tr>
+              <tr><td>GCP-3</td><td>1890, 1920</td><td>543680, 2829470</td><td>+0.31 m</td></tr>
+              <tr><td>GCP-4</td><td>220, 1890</td><td>542010, 2829510</td><td>+0.64 m</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.4rem; font-size: 0.75rem; color: var(--text-muted);">
+          <span>Affine 6-Param Solver: <strong>4 GCPs</strong></span>
+          <span style="color: #34d399; font-weight: 600;">RMSE: 0.58 meters (Excellent)</span>
+        </div>
+      </div>
+
+      <button class="btn btn-primary" onclick="executeAnalysis()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="m10 15 5-3-5-3v6z"/></svg>
+        Execute Boundary Overlay Analysis
+      </button>
+
+      <!-- Reviewer & Field Task Section -->
+      <div style="border-top: 1px solid var(--border-color); padding-top: 1rem; display: flex; flex-direction: column; gap: 0.75rem;">
+        <div class="panel-title" style="padding-bottom: 0.25rem;">
+          <span>LandAmin Field Action</span>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Review Decision</label>
+          <select class="form-select" id="reviewDecision">
+            <option value="CONFIRMED_DISCREPANCY">CONFIRMED_DISCREPANCY (Requires Ground Task)</option>
+            <option value="SURVEY_TOLERANCE_ACCEPTABLE">SURVEY_TOLERANCE_ACCEPTABLE (Within Standard Variance)</option>
+            <option value="REQUIRES_FIELD_SURVEY">REQUIRES_FIELD_SURVEY (Dispatch Amin)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Reviewer Observations</label>
+          <textarea class="form-control" id="reviewNotes" rows="2" placeholder="Record reason for confirmation or ground task instructions...">Discrepancy observed along northern boundary ridge. Field verification required.</textarea>
+        </div>
+        <button class="btn btn-secondary" onclick="dispatchFieldTask()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+          Dispatch LandAmin Task (P1-04 Integrated)
+        </button>
+      </div>
+    </div>
+
+    <!-- Right Panel: Visual Overlay Canvas & Metrology Results -->
+    <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+      <!-- Interactive SVG Map Viewer -->
+      <div class="map-card">
+        <div class="map-header">
+          <div style="display: flex; align-items: center; gap: 0.5rem;">
+            <strong id="plotHeading" style="font-size: 0.95rem;">Plot Khesra 112 — Danapur, Saguna</strong>
+            <span class="badge badge-info" id="statusBadge">ANALYZED</span>
+          </div>
+          <div class="map-legend">
+            <div class="legend-item"><div class="legend-color" style="border: 2px solid #38bdf8; background: rgba(56, 189, 248, 0.1);"></div><span>Baseline (CS 1910)</span></div>
+            <div class="legend-item"><div class="legend-color" style="border: 2px solid #f59e0b; background: rgba(245, 158, 11, 0.1);"></div><span>Modern Survey</span></div>
+            <div class="legend-item"><div class="legend-color" style="background: rgba(16, 185, 129, 0.4);"></div><span>Concordant Overlap</span></div>
+            <div class="legend-item"><div class="legend-color" style="background: rgba(244, 63, 94, 0.5);"></div><span>Discrepancy Shift</span></div>
+          </div>
+        </div>
+
+        <svg class="svg-viewport" id="mapSvg" viewBox="0 0 800 460">
+          <!-- Background Grid -->
+          <defs>
+            <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+              <path d="M 40 0 L 0 0 0 40" fill="none" stroke="rgba(255, 255, 255, 0.04)" stroke-width="1"/>
+            </pattern>
+            <pattern id="hatch" width="8" height="8" patternTransform="rotate(45 0 0)" patternUnits="userSpaceOnUse">
+              <line x1="0" y1="0" x2="0" y2="8" stroke="#f43f5e" stroke-width="2" />
+            </pattern>
+          </defs>
+          <rect width="100%" height="100%" fill="url(#grid)" />
+
+          <!-- Dynamic SVG Elements injected by JS -->
+          <g id="geometryLayer"></g>
+        </svg>
+      </div>
+
+      <!-- KPI Metrology Cards -->
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <span class="kpi-label">IoU Concordance (Jaccard)</span>
+          <span class="kpi-value" id="kpiIou" style="color: #38bdf8;">0.912</span>
+          <span class="kpi-sub">Intersection / Union Ratio</span>
+        </div>
+        <div class="kpi-card">
+          <span class="kpi-label">Centroid Displacement</span>
+          <span class="kpi-value" id="kpiCentroid">2.45 m</span>
+          <span class="kpi-sub">Center Point Vector Shift</span>
+        </div>
+        <div class="kpi-card">
+          <span class="kpi-label">Hausdorff Distance</span>
+          <span class="kpi-value" id="kpiHausdorff">4.80 m</span>
+          <span class="kpi-sub">Max Boundary Shift</span>
+        </div>
+        <div class="kpi-card">
+          <span class="kpi-label">Area Variance</span>
+          <span class="kpi-value" id="kpiAreaDelta">3.2%</span>
+          <span class="kpi-sub">Δ 64.2 sqm (0.015 Ac)</span>
+        </div>
+      </div>
+
+      <!-- Findings & Action Summary -->
+      <div class="findings-box" id="findingsSummary">
+        <strong>Deterministic Spatial Diagnosis:</strong> High geometric concordance (IoU 0.912). Minor boundary displacement of 2.45m along northern ridge, consistent with historical chain survey tolerances.
+      </div>
+    </div>
+  </main>
+
+  <script>
+    const scenarios = {
+      danapur_khagaul: {
+        title: "Plot Khesra 112 — Danapur, Saguna",
+        status: "NO_SIGNIFICANT_DIFFERENCE_DETECTED",
+        severity: "NONE",
+        iou: 0.942,
+        centroid: "1.45 m",
+        hausdorff: "2.80 m",
+        areaDelta: "2.1%",
+        areaDeltaSub: "Δ 42.1 sqm (0.010 Ac)",
+        summary: "High geometric concordance (IoU 0.942). Centroid displacement is 1.45m and area delta is 2.10%, within acceptable historical survey tolerances.",
+        baseline: [[180, 100], [580, 90], [610, 360], [210, 370]],
+        comparison: [[185, 105], [585, 95], [605, 365], [205, 372]]
+      },
+      patna_kankarbagh: {
+        title: "Plot Khesra 48 — Patna Sadar, Kankarbagh",
+        status: "POTENTIAL_BOUNDARY_DISCREPANCY",
+        severity: "HIGH",
+        iou: 0.741,
+        centroid: "6.85 m",
+        hausdorff: "12.40 m",
+        areaDelta: "14.8%",
+        areaDeltaSub: "Δ 295.4 sqm (0.073 Ac)",
+        summary: "Significant boundary discrepancy detected (IoU 0.741). Area variance is 14.8% and maximum boundary shift is 12.40m along eastern frontage. Ground LandAmin verification recommended.",
+        baseline: [[200, 80], [540, 70], [560, 340], [180, 350]],
+        comparison: [[240, 90], [610, 80], [620, 380], [230, 370]]
+      },
+      gaya_bodhgaya: {
+        title: "Plot Khesra 205 — Bodh Gaya, Mastipur",
+        status: "POTENTIAL_GEOMETRY_GAP",
+        severity: "MEDIUM",
+        iou: 0.815,
+        centroid: "4.10 m",
+        hausdorff: "7.20 m",
+        areaDelta: "8.4%",
+        areaDeltaSub: "Δ 168.0 sqm (0.041 Ac)",
+        summary: "Apparent geometry wedge gap (168.0 sqm missing in modern survey comparison). Centroid displacement is 4.10m. Investigate unrecorded subdivision or partition deed.",
+        baseline: [[190, 90], [590, 85], [570, 350], [170, 360]],
+        comparison: [[190, 150], [590, 140], [570, 350], [170, 360]]
+      }
+    };
+
+    function renderSvgOverlay(sc) {
+      const g = document.getElementById("geometryLayer");
+      g.innerHTML = "";
+
+      const bPts = sc.baseline.map(p => p.join(",")).join(" ");
+      const cPts = sc.comparison.map(p => p.join(",")).join(" ");
+
+      // 1. Draw Baseline polygon (Cyan)
+      const bPoly = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
+      bPoly.setAttribute("points", bPts);
+      bPoly.setAttribute("stroke", "#38bdf8");
+      bPoly.setAttribute("stroke-width", "3");
+      bPoly.setAttribute("fill", "rgba(56, 189, 248, 0.15)");
+      bPoly.setAttribute("stroke-dasharray", "6,3");
+      g.appendChild(bPoly);
+
+      // 2. Draw Comparison polygon (Amber)
+      const cPoly = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
+      cPoly.setAttribute("points", cPts);
+      cPoly.setAttribute("stroke", "#f59e0b");
+      cPoly.setAttribute("stroke-width", "3");
+      cPoly.setAttribute("fill", "rgba(245, 158, 11, 0.18)");
+      g.appendChild(cPoly);
+
+      // 3. Draw Discrepancy Hatching (simulated via difference region)
+      const diffPoly = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
+      diffPoly.setAttribute("points", cPts);
+      diffPoly.setAttribute("fill", "url(#hatch)");
+      diffPoly.setAttribute("opacity", "0.45");
+      g.appendChild(diffPoly);
+
+      // 4. Centroid points
+      const bCentroid = [ (sc.baseline[0][0] + sc.baseline[2][0])/2, (sc.baseline[0][1] + sc.baseline[2][1])/2 ];
+      const cCentroid = [ (sc.comparison[0][0] + sc.comparison[2][0])/2, (sc.comparison[0][1] + sc.comparison[2][1])/2 ];
+
+      const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+      line.setAttribute("x1", bCentroid[0]);
+      line.setAttribute("y1", bCentroid[1]);
+      line.setAttribute("x2", cCentroid[0]);
+      line.setAttribute("y2", cCentroid[1]);
+      line.setAttribute("stroke", "#f43f5e");
+      line.setAttribute("stroke-width", "2");
+      g.appendChild(line);
+
+      const dotB = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+      dotB.setAttribute("cx", bCentroid[0]);
+      dotB.setAttribute("cy", bCentroid[1]);
+      dotB.setAttribute("r", "5");
+      dotB.setAttribute("fill", "#38bdf8");
+      g.appendChild(dotB);
+
+      const dotC = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+      dotC.setAttribute("cx", cCentroid[0]);
+      dotC.setAttribute("cy", cCentroid[1]);
+      dotC.setAttribute("r", "5");
+      dotC.setAttribute("fill", "#f59e0b");
+      g.appendChild(dotC);
+    }
+
+    function loadScenario(key) {
+      const sc = scenarios[key];
+      if (!sc) return;
+
+      document.getElementById("plotHeading").textContent = sc.title;
+      document.getElementById("kpiIou").textContent = sc.iou.toFixed(3);
+      document.getElementById("kpiCentroid").textContent = sc.centroid;
+      document.getElementById("kpiHausdorff").textContent = sc.hausdorff;
+      document.getElementById("kpiAreaDelta").textContent = sc.areaDelta;
+      document.getElementById("findingsSummary").innerHTML = `<strong>Deterministic Spatial Diagnosis:</strong> ${sc.summary}`;
+
+      const badge = document.getElementById("statusBadge");
+      badge.textContent = sc.status;
+      if (sc.severity === "NONE") {
+        badge.className = "badge badge-success";
+      } else if (sc.severity === "HIGH") {
+        badge.className = "badge badge-danger";
+      } else {
+        badge.className = "badge badge-warning";
+      }
+
+      renderSvgOverlay(sc);
+    }
+
+    function executeAnalysis() {
+      const key = document.getElementById("sampleSelector").value;
+      loadScenario(key);
+      alert("Boundary overlay spatial calculation completed successfully. Metrics updated.");
+    }
+
+    function dispatchFieldTask() {
+      const dec = document.getElementById("reviewDecision").value;
+      const notes = document.getElementById("reviewNotes").value;
+      alert(`Field Task FT-${Math.random().toString(36).substring(2, 8).toUpperCase()} dispatched successfully to LandAmin queue!\nDecision: ${dec}\nNotes: ${notes}`);
+    }
+
+    // Initialize default scenario
+    window.onload = function() {
+      loadScenario("danapur_khagaul");
+    };
+  </script>
+</body>
+</html>

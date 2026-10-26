@@ -85,6 +85,20 @@ class Section3CadastralData(BaseModel):
     spatial_provenance: Optional[str] = None
     limitation_notes: Optional[str] = None
 
+    # Cadastral Vector Overlay & Boundary Discrepancy (TASK-P2-04)
+    overlay_performed: bool = False
+    baseline_geometry_label: Optional[str] = None
+    comparison_geometry_label: Optional[str] = None
+    iou_score: Optional[float] = None
+    centroid_displacement_meters: Optional[float] = None
+    hausdorff_distance_meters: Optional[float] = None
+    discrepancy_status: Optional[str] = None
+    discrepancy_severity: Optional[str] = None
+    findings_summary: Optional[str] = None
+    field_task_number: Optional[str] = None
+    statutory_cadastral_disclaimer: Optional[str] = None
+
+
 class Section4DocumentItem(BaseModel):
     document_id: str
     document_category: str

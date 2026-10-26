@@ -62,6 +62,8 @@ class Case(Base):
     reports = relationship("LandIntelligenceReport", back_populates="case", cascade="all, delete-orphan")
     judicial_matches = relationship("ParcelJudicialMatch", back_populates="case", cascade="all, delete-orphan")
     valuations = relationship("PropertyValuation", back_populates="case", cascade="all, delete-orphan")
+    cadastral_geometries = relationship("CadastralParcelGeometry", back_populates="case")
+    boundary_analyses = relationship("BoundaryOverlayAnalysis", back_populates="case")
 
 class CaseParcel(Base):
     __tablename__ = "case_parcels"

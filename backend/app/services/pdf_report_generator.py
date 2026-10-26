@@ -180,9 +180,9 @@ def generate_land_intelligence_pdf(data: ReportDataStructure) -> bytes:
 
 
     # =========================================================================
-    # SECTION 3: CADASTRAL MAP & SPATIAL ANALYSIS (P1-02)
+    # SECTION 3: CADASTRAL MAP & SPATIAL ANALYSIS (P1-02 & P2-04)
     # =========================================================================
-    pdf.section_header("Section 3 — Cadastral Map & Spatial Analysis (Bhu-Naksha)", "Spatial vector geometry ingestion and area comparison")
+    pdf.section_header("Section 3 — Cadastral Map & Boundary Discrepancy Intelligence", "Historical survey vector overlay, georeferencing, and spatial metrology")
     s3 = data.section_3_cadastral
 
     if s3.is_available:
@@ -197,17 +197,51 @@ def generate_land_intelligence_pdf(data: ReportDataStructure) -> bytes:
                 ("Geometry Validation", pdf.sanitize(s3.geometry_validation_status), "Topology & Boundary Polygon OK"),
                 ("Spatially Calculated Area", f"{s3.calculated_area_acres} Acres", "Computed from Cadastral Coordinates"),
                 ("Area Delta vs Recorded", f"{s3.area_delta_acres} Acres ({s3.variance_percentage}%)", "Concordant (Variance <= 5.0%)" if abs(s3.variance_percentage or 0) <= 5.0 else "Discrepancy Detected (> 5.0%)"),
-                ("Spatial Provenance", pdf.sanitize(s3.spatial_provenance), "DLRS Bihar Bhu-Naksha Portal")
+                ("Spatial Provenance", pdf.sanitize(s3.spatial_provenance), "DLRS Bihar Bhu-Naksha / Overlay Engine")
             ]
             for dim, met, obs in items:
                 r = table.row()
                 r.cell(dim)
                 r.cell(met)
                 r.cell(obs)
+
+        # TASK-P2-04: Cadastral Vector Overlay Discrepancy Table
+        if s3.overlay_performed:
+            pdf.ln(1)
+            pdf.set_font(pdf.unicode_font_name, style="B", size=8.5)
+            pdf.set_text_color(30, 41, 59)
+            pdf.cell(190, 5, "Boundary Overlay Discrepancy Metrology (Historical CS vs Modern Survey):", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
+
+            with pdf.table(col_widths=(45, 50, 50, 45), text_align="L", line_height=5.0, headings_style=table_head) as table:
+                h = table.row()
+                h.cell("Overlay Metric")
+                h.cell("Measured Value")
+                h.cell("Discrepancy Status")
+                h.cell("Field Action")
+
+                row = table.row()
+                row.cell("IoU (Jaccard Index)")
+                row.cell(f"{s3.iou_score:.3f}" if s3.iou_score is not None else "N/A")
+                row.cell(pdf.sanitize(s3.discrepancy_status or "EVALUATED"))
+                row.cell(pdf.sanitize(s3.field_task_number or "No Task Dispatched"))
+
+                row2 = table.row()
+                row2.cell("Centroid Shift / Hausdorff")
+                row2.cell(f"Shift: {s3.centroid_displacement_meters}m | Max: {s3.hausdorff_distance_meters}m")
+                row2.cell(f"Severity: {pdf.sanitize(s3.discrepancy_severity or 'LOW')}")
+                row2.cell("LandAmin Verification" if s3.field_task_number else "Tolerable")
+
+            if s3.statutory_cadastral_disclaimer:
+                pdf.ln(1)
+                pdf.set_font(pdf.unicode_font_name, style="I", size=7.2)
+                pdf.set_text_color(120, 53, 15)  # Amber warning color
+                pdf.multi_cell(190, 3.8, f"STATUTORY LIMITATION: {pdf.sanitize(s3.statutory_cadastral_disclaimer)}", border=1, fill=False)
+                pdf.set_text_color(0, 0, 0)
     else:
         pdf.set_font(pdf.unicode_font_name, size=8)
         pdf.cell(190, 6, pdf.sanitize(s3.limitation_notes or "Cadastral map geometry unavailable."), border=1, new_x=XPos.LMARGIN, new_y=YPos.NEXT)
     pdf.ln(2)
+
 
 
     # =========================================================================
