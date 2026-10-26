@@ -15,7 +15,7 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
         return False
 
 def create_access_token(
-    subject: Optional[str] = None,
+    subject: Optional[Any] = None,
     tenant_id: Optional[str] = None,
     role: Optional[str] = None,
     expires_delta: Optional[timedelta] = None,
@@ -26,9 +26,13 @@ def create_access_token(
     else:
         expire = datetime.now(timezone.utc) + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
 
+    if isinstance(subject, dict) and data is None:
+        data = subject
+        subject = None
+
     if data:
         sub = data.get("sub", subject)
-        tid = data.get("tenant_id") or data.get("tid", tenant_id)
+        tid = data.get("tenant_id") or data.get("org_id") or data.get("tid", tenant_id)
         user_role = data.get("role", role)
     else:
         sub = subject

@@ -1,4 +1,5 @@
 import uuid
+import re
 import sqlalchemy as sa
 from sqlalchemy.orm import relationship
 from app.database import Base
@@ -15,3 +16,11 @@ class Organization(Base):
     users = relationship("User", back_populates="organization", cascade="all, delete-orphan")
     parcels = relationship("Parcel", back_populates="organization")
     cases = relationship("Case", back_populates="organization")
+
+    def __init__(self, **kwargs):
+        if "slug" not in kwargs or not kwargs["slug"]:
+            name = kwargs.get("name", "org")
+            base_slug = re.sub(r'[^a-zA-Z0-9]+', '-', name).strip('-').lower()[:48]
+            kwargs["slug"] = f"{base_slug}-{uuid.uuid4().hex[:8]}" if base_slug else uuid.uuid4().hex[:16]
+        super().__init__(**kwargs)
+

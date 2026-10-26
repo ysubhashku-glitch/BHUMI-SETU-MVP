@@ -2,7 +2,7 @@ import uuid
 from datetime import datetime, date, timezone
 from enum import Enum
 import sqlalchemy as sa
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, synonym
 from app.database import Base
 from app.models.base import GUID, JSONCompatible, utc_now
 
@@ -156,6 +156,10 @@ class MutationCase(Base):
     created_at = sa.Column(sa.DateTime(timezone=True), default=utc_now, nullable=False)
     updated_at = sa.Column(sa.DateTime(timezone=True), default=utc_now, onupdate=utc_now, nullable=False)
 
+    # Synonyms
+    circle = synonym("anchal")
+    resolutions = synonym("entity_resolutions")
+
     # Relationships
     organization = relationship("Organization")
     parcel = relationship("Parcel", back_populates="mutation_cases")
@@ -163,6 +167,7 @@ class MutationCase(Base):
     events = relationship("MutationEvent", back_populates="mutation_case", cascade="all, delete-orphan", order_by="MutationEvent.event_date.asc()")
     documents = relationship("MutationDocument", back_populates="mutation_case", cascade="all, delete-orphan")
     entity_resolutions = relationship("MutationEntityResolution", back_populates="mutation_case", cascade="all, delete-orphan")
+
 
 
 class MutationEvent(Base):

@@ -8,8 +8,8 @@ discrepancy analysis responses, and statutory disclaimers.
 from __future__ import annotations
 
 import uuid
-from datetime import datetime
-from typing import List, Dict, Any, Optional
+from datetime import datetime, date
+from typing import List, Dict, Any, Optional, Union
 from pydantic import BaseModel, Field, ConfigDict
 
 
@@ -25,7 +25,7 @@ STATUTORY_VALUATION_DISCLAIMER = (
 
 
 class MVRScheduleRecord(BaseModel):
-    schedule_id: str
+    schedule_id: Union[str, uuid.UUID]
     schedule_code: str
     district: str
     registration_office: str
@@ -40,8 +40,8 @@ class MVRScheduleRecord(BaseModel):
     rate_per_sqft: Optional[float] = None
     rate_per_katha: Optional[float] = None
     unit_basis: str = "DECIMAL"
-    effective_from: datetime
-    effective_to: Optional[datetime] = None
+    effective_from: Union[datetime, date]
+    effective_to: Optional[Union[datetime, date]] = None
     version_number: int = 1
     is_active: bool = True
     verification_status: str = "VERIFIED_OFFICIAL"

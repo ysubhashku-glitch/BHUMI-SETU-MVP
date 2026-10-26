@@ -95,7 +95,7 @@ class ValuationService:
                     source_gazette_reference=s.get("source_gazette_reference"),
                     source_url=s.get("source_url"),
                     source_provider=s["source_provider"],
-                    raw_source_payload=s,
+                    raw_source_payload={k: (v.isoformat() if hasattr(v, "isoformat") else v) for k, v in s.items()},
                 )
                 db.add(sched)
             db.commit()
