@@ -68,3 +68,13 @@ class DomainValidationError(BhumiSetuException):
             status_code=status.HTTP_400_BAD_REQUEST,
             details=details
         )
+
+class BusinessRuleViolationError(BhumiSetuException):
+    def __init__(self, message: str, details: Optional[Any] = None):
+        super().__init__(
+            code="BUSINESS_RULE_VIOLATION",
+            message=message,
+            status_code=status.HTTP_400_BAD_REQUEST,
+            details=details
+        )
+
