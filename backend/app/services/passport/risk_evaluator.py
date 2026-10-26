@@ -1,5 +1,5 @@
 """
-Explainable Multi-Dimensional Land Risk Evaluator (TASK-P2-06).
+Explainable Multi-Dimensional Land Risk Evaluator (TASK-P2-06.1).
 
 Evaluates the 8 separate Land Intelligence risk dimensions:
 1. REVENUE_RECORD
@@ -11,16 +11,33 @@ Evaluates the 8 separate Land Intelligence risk dimensions:
 7. VALUATION_STATUTORY
 8. EVIDENCE_COMPLETENESS
 
-Scoring Formula and Rationale:
-- The Composite Priority Score is a deterministic rule-based diligence priority index (0.00 to 100.00)
-  calibrated to rank the density and severity of legal, cadastral, and physical discrepancies.
-- It is NOT a statistical probability of title defect or litigation outcome.
-- Never outputs a "CLEAR_TITLE", "TITLE_CONFIRMED", or equivalent certificate.
+Mathematical Implementation & Epistemic Principles:
+- Weight Normalization: All 8 dimension weights sum strictly to 1.000.
+- Provisional Nature: Weights and thresholds are deterministic diligence-priority rules,
+  marked as PROVISIONAL until calibrated against empirical pilot ground-truth.
+- Deduplication: Identical or correlated findings sharing the same finding_code are deduplicated
+  within each dimension to prevent artificial score inflation from repeated notifications.
+- Separation of Three Outputs:
+    A. Evidence Completeness (0.0% to 100.0%): Measures availability of verified records.
+       Missing evidence reduces completeness, but is NEVER treated as proof of an adverse defect.
+    B. Adverse Findings Score (0.0 to 100.0): Measures severity of detected conflicts, stays, and deficits.
+       Absence of detected problems is NEVER treated as proof of safety.
+    C. Review Priority Index (0.00 to 100.00): Composite diligence priority index ranking the need
+       for professional manual scrutiny. It is NOT a statistical probability of title defect.
+- Strict Boundary Calibration:
+    * Score < 25.0: LOW (provided no High/Critical finding)
+    * 25.0 <= Score < 45.0: MEDIUM
+    * 45.0 <= Score < 70.0: HIGH
+    * Score >= 70.0: CRITICAL
+    * Any CRITICAL finding forces CRITICAL tier.
+    * Any HIGH finding forces at least HIGH tier.
+    * Any blocking evidence gap forces INSUFFICIENT_EVIDENCE tier.
 """
 
 from __future__ import annotations
 
-from typing import Dict, Any, List, Optional, Tuple
+import logging
+from typing import Dict, Any, List, Optional, Tuple, Set
 from app.models.passport_synthesis import (
     RiskDimension,
     RiskTier,
@@ -28,8 +45,11 @@ from app.models.passport_synthesis import (
     STATUTORY_SYNTHESIS_LIMITATION_STATEMENT,
 )
 
-# Relative dimension weights in composite diligence score (sum = 1.00)
-DIMENSION_WEIGHTS: Dict[RiskDimension, float] = {
+logger = logging.getLogger(__name__)
+
+# Relative dimension weights in composite diligence score (Strictly sum = 1.00)
+# NOTE: Marked PROVISIONAL until statistically calibrated against verified pilot dockets.
+PROVISIONAL_DIMENSION_WEIGHTS: Dict[RiskDimension, float] = {
     RiskDimension.JUDICIAL_LITIGATION: 0.20,
     RiskDimension.TRANSACTION_MUTATION: 0.20,
     RiskDimension.CADASTRAL_SPATIAL: 0.15,
@@ -40,7 +60,7 @@ DIMENSION_WEIGHTS: Dict[RiskDimension, float] = {
     RiskDimension.VALUATION_STATUTORY: 0.05,
 }
 
-# Penalty weights per severity tier
+# Penalty weights per severity tier for primary findings
 SEVERITY_PENALTIES: Dict[FindingSeverity, float] = {
     FindingSeverity.CRITICAL: 50.0,
     FindingSeverity.HIGH: 30.0,
@@ -49,11 +69,22 @@ SEVERITY_PENALTIES: Dict[FindingSeverity, float] = {
     FindingSeverity.INFO: 0.0,
 }
 
+# Subsystems tracked for evidence completeness measurement
+CORE_SUBSYSTEMS: List[str] = [
+    "REVENUE",
+    "MUTATION",
+    "JUDICIAL",
+    "CADASTRAL_SPATIAL",
+    "FIELD_SURVEY",
+    "OCR_DOCUMENT",
+    "VALUATION",
+]
+
 
 class ExplainableRiskEvaluator:
     """
-    Computes explainable, multi-dimensional diligence priority scores
-    and assigns risk tiers with explicit audit explanations.
+    Computes explainable, multi-dimensional diligence priority scores,
+    enforcing deduplication, output separation, and strict boundary conditions.
     """
 
     @classmethod
@@ -61,19 +92,41 @@ class ExplainableRiskEvaluator:
         cls,
         findings: List[Dict[str, Any]],
         evidence_gaps: List[Dict[str, Any]],
+        facts: Optional[List[Dict[str, Any]]] = None,
     ) -> Tuple[RiskTier, float, Dict[str, Any]]:
         """
         Calculates dimension-level assessments and overall composite priority score.
+
+        Separates three distinct outputs:
+          A. Evidence Completeness
+          B. Adverse Findings Score
+          C. Review Priority Score (Composite Priority Index)
+
         Returns:
             (overall_risk_tier, composite_score, dimension_breakdown)
         """
+        # 1. Map findings by dimension with deduplication of identical finding_codes
         dimension_findings: Dict[RiskDimension, List[Dict[str, Any]]] = {d: [] for d in RiskDimension}
+        seen_finding_codes: Dict[RiskDimension, Set[str]] = {d: set() for d in RiskDimension}
+
         for f in findings:
             dim = f["dimension"]
             if isinstance(dim, str):
                 dim = RiskDimension(dim)
-            dimension_findings[dim].append(f)
 
+            code = f.get("finding_code", "")
+            # If code is already seen in this dimension, mark as correlated/duplicate to avoid artificial score inflation
+            is_duplicate = False
+            if code and code in seen_finding_codes[dim]:
+                is_duplicate = True
+            elif code:
+                seen_finding_codes[dim].add(code)
+
+            f_copy = dict(f)
+            f_copy["is_correlated_duplicate"] = is_duplicate
+            dimension_findings[dim].append(f_copy)
+
+        # 2. Map evidence gaps by dimension
         dimension_gaps: Dict[RiskDimension, List[Dict[str, Any]]] = {d: [] for d in RiskDimension}
         subsystem_to_dimension = {
             "REVENUE": RiskDimension.REVENUE_RECORD,
@@ -85,29 +138,58 @@ class ExplainableRiskEvaluator:
             "VALUATION": RiskDimension.VALUATION_STATUTORY,
         }
 
+        seen_gap_codes: Set[str] = set()
+        deduped_gaps: List[Dict[str, Any]] = []
+
         for g in evidence_gaps:
-            sub = g["subsystem"]
+            g_code = g.get("gap_code", "")
+            if g_code and g_code in seen_gap_codes:
+                continue  # Deduplicate identical gap codes
+            if g_code:
+                seen_gap_codes.add(g_code)
+            deduped_gaps.append(g)
+
+            sub = g.get("subsystem", "")
             target_dim = subsystem_to_dimension.get(sub, RiskDimension.EVIDENCE_COMPLETENESS)
             dimension_gaps[target_dim].append(g)
 
+        # -------------------------------------------------------------
+        # Output A: Evidence Completeness Index
+        # -------------------------------------------------------------
+        subsystems_with_gaps = {g.get("subsystem") for g in deduped_gaps if g.get("subsystem")}
+        available_subsystems_count = 0
+        for s in CORE_SUBSYSTEMS:
+            if s not in subsystems_with_gaps:
+                available_subsystems_count += 1
+
+        evidence_completeness_ratio = round(available_subsystems_count / len(CORE_SUBSYSTEMS), 4)
+        evidence_completeness_pct = round(evidence_completeness_ratio * 100.0, 2)
+
+        # -------------------------------------------------------------
+        # Evaluate Each Dimension
+        # -------------------------------------------------------------
         dimension_scores: Dict[str, Any] = {}
-        weighted_sum = 0.0
+        weighted_priority_sum = 0.0
+        weighted_adverse_sum = 0.0
         has_critical_finding = False
         has_high_finding = False
-        has_blocking_gap = any(g.get("is_blocking", False) for g in evidence_gaps)
+        has_blocking_gap = any(g.get("is_blocking", False) for g in deduped_gaps)
 
         for dim in RiskDimension:
             d_findings = dimension_findings[dim]
             d_gaps = dimension_gaps[dim]
 
-            # Base score of 10.0 representing baseline diligence overhead
-            dim_score = 10.0
+            # Base score: 10.0 baseline diligence inspection effort
+            base_score = 10.0
+            adverse_penalty = 0.0
+            gap_penalty = 0.0
             highest_sev = FindingSeverity.INFO
 
             for f in d_findings:
                 sev = f["severity"]
                 if isinstance(sev, str):
                     sev = FindingSeverity(sev)
+
                 if sev == FindingSeverity.CRITICAL:
                     has_critical_finding = True
                     highest_sev = FindingSeverity.CRITICAL
@@ -122,18 +204,26 @@ class ExplainableRiskEvaluator:
                     if highest_sev == FindingSeverity.INFO:
                         highest_sev = FindingSeverity.LOW
 
-                dim_score += SEVERITY_PENALTIES.get(sev, 0.0)
+                # If duplicate finding, apply dampening (at most 20% penalty) to prevent inflation
+                if f.get("is_correlated_duplicate", False):
+                    adverse_penalty += (SEVERITY_PENALTIES.get(sev, 0.0) * 0.20)
+                else:
+                    adverse_penalty += SEVERITY_PENALTIES.get(sev, 0.0)
 
-            # Evidence gaps add diligence priority
+            # Evidence gaps add diligence priority, NOT adverse defect penalties
             for g in d_gaps:
                 if g.get("is_blocking", False):
-                    dim_score += 20.0
+                    gap_penalty += 15.0
                 else:
-                    dim_score += 8.0
+                    gap_penalty += 5.0
 
-            dim_score = min(100.0, max(0.0, round(dim_score, 2)))
-            weight = DIMENSION_WEIGHTS.get(dim, 0.10)
-            weighted_sum += (dim_score * weight)
+            # Cap individual dimension penalties at 100.0
+            dim_adverse_score = min(100.0, max(0.0, round(base_score + adverse_penalty, 2)))
+            dim_priority_score = min(100.0, max(0.0, round(base_score + adverse_penalty + gap_penalty, 2)))
+
+            weight = PROVISIONAL_DIMENSION_WEIGHTS.get(dim, 0.10)
+            weighted_priority_sum += (dim_priority_score * weight)
+            weighted_adverse_sum += (dim_adverse_score * weight)
 
             status_label = "CONSISTENT"
             if highest_sev in (FindingSeverity.CRITICAL, FindingSeverity.HIGH):
@@ -147,25 +237,46 @@ class ExplainableRiskEvaluator:
                 "dimension": dim.value,
                 "status": status_label,
                 "severity": highest_sev.value,
-                "priority_score": dim_score,
+                "priority_score": dim_priority_score,
+                "adverse_score": dim_adverse_score,
                 "findings_count": len(d_findings),
+                "unique_findings_count": len(seen_finding_codes[dim]),
                 "evidence_gaps_count": len(d_gaps),
                 "weight_in_composite": weight,
                 "requires_human_review": any(f.get("requires_human_review", False) for f in d_findings),
             }
 
-        composite_score = min(100.0, max(0.0, round(weighted_sum, 2)))
+        # -------------------------------------------------------------
+        # Output B & C: Adverse Score and Composite Diligence Priority Score
+        # -------------------------------------------------------------
+        adverse_findings_score = min(100.0, max(0.0, round(weighted_adverse_sum, 2)))
+        composite_score = min(100.0, max(0.0, round(weighted_priority_sum, 2)))
 
-        # Assign overall risk tier
+        # -------------------------------------------------------------
+        # Calibrate Overall Risk Tier against Strict Boundary Conditions
+        # -------------------------------------------------------------
         if has_blocking_gap:
             overall_tier = RiskTier.INSUFFICIENT_EVIDENCE
         elif composite_score >= 70.0 or has_critical_finding:
             overall_tier = RiskTier.CRITICAL
-        elif composite_score >= 50.0 or has_high_finding:
+        elif composite_score >= 45.0 or has_high_finding:
             overall_tier = RiskTier.HIGH
-        elif composite_score >= 30.0:
+        elif composite_score >= 25.0:
             overall_tier = RiskTier.MEDIUM
         else:
             overall_tier = RiskTier.LOW
+
+        # Attach overall separated outputs in dimension_scores metadata
+        dimension_scores["_outputs"] = {
+            "evidence_completeness_ratio": evidence_completeness_ratio,
+            "evidence_completeness_percentage": evidence_completeness_pct,
+            "adverse_findings_score": adverse_findings_score,
+            "review_priority_score": composite_score,
+            "overall_risk_tier": overall_tier.value,
+            "has_blocking_gap": has_blocking_gap,
+            "formula_version": "v1.1-calibrated-separated-outputs",
+            "weights_status": "PROVISIONAL_PENDING_EMPIRICAL_PILOT",
+            "statutory_limitation": STATUTORY_SYNTHESIS_LIMITATION_STATEMENT,
+        }
 
         return overall_tier, composite_score, dimension_scores

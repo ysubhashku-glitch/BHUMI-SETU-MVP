@@ -343,45 +343,72 @@ class EvidenceReconciliationEngine:
         ).order_by(BoundaryOverlayAnalysis.created_at.desc()).first()
 
         if overlay_analysis:
-            facts.append({
-                "subsystem": "CADASTRAL_SPATIAL",
-                "fact_category": "VECTOR_OVERLAY_METROLOGY",
-                "source_reference": f"PostGIS Spatial Engine Analysis {overlay_analysis.analysis_id}",
-                "source_retrieval_date": overlay_analysis.created_at,
-                "raw_value": {
-                    "iou_score": float(overlay_analysis.iou_score) if overlay_analysis.iou_score else None,
-                    "centroid_displacement_meters": float(overlay_analysis.centroid_displacement_meters) if overlay_analysis.centroid_displacement_meters else None,
-                    "hausdorff_distance_meters": float(overlay_analysis.hausdorff_distance_meters) if overlay_analysis.hausdorff_distance_meters else None,
-                    "discrepancy_taxonomy": overlay_analysis.discrepancy_taxonomy,
-                    "severity": overlay_analysis.discrepancy_severity,
-                },
-                "normalized_value": {
-                    "iou": float(overlay_analysis.iou_score) if overlay_analysis.iou_score else 0.0,
-                    "centroid_shift_m": float(overlay_analysis.centroid_displacement_meters) if overlay_analysis.centroid_displacement_meters else 0.0,
-                },
-                "verification_status": "COMPUTED_METRIC",
-                "limitations": "Numerical precision does not equal cadastral ground survey accuracy (±1-3m chain tolerance).",
-            })
+            # Spatial validation gate 1: CRS and Georeferencing Quality
+            crs_valid = overlay_analysis.analysis_crs in ("EPSG:32645", "EPSG:4326")
+            is_insufficient_ref = (
+                not crs_valid
+                or overlay_analysis.discrepancy_taxonomy in (
+                    "INSUFFICIENT_SPATIAL_REFERENCE",
+                    "INSUFFICIENT_ACCURACY_INFORMATION",
+                    "INVALID_GEOMETRY",
+                )
+            )
 
-            # Spatial validation gate: check IoU and centroid displacement
-            if overlay_analysis.discrepancy_severity in ("HIGH", "CRITICAL") or (overlay_analysis.iou_score and overlay_analysis.iou_score < 0.70):
-                findings.append({
-                    "dimension": RiskDimension.CADASTRAL_SPATIAL,
-                    "finding_code": f"FIND-SPA-{overlay_analysis.discrepancy_taxonomy or 'OVERLAY-SHIFT'}",
-                    "severity": FindingSeverity.HIGH if overlay_analysis.discrepancy_severity == "HIGH" else FindingSeverity.CRITICAL,
-                    "title": f"Cadastral Boundary Discrepancy: {overlay_analysis.discrepancy_taxonomy}",
+            if is_insufficient_ref:
+                evidence_gaps.append({
+                    "subsystem": "CADASTRAL_SPATIAL",
+                    "gap_code": "GAP-SPA-INSUFFICIENT-REFERENCE",
                     "description": (
-                        f"Spatial overlay between historical cadastral sheet and modern parcel shows significant variance. "
-                        f"IoU: {overlay_analysis.iou_score:.2f}, Centroid displacement: {overlay_analysis.centroid_displacement_meters:.1f}m. "
-                        f"{overlay_analysis.findings_summary or ''}"
+                        f"Cadastral overlay has unconfirmed CRS ('{overlay_analysis.analysis_crs}') "
+                        f"or insufficient georeferencing accuracy: {overlay_analysis.discrepancy_taxonomy}."
                     ),
-                    "supporting_evidence": {
-                        "iou": float(overlay_analysis.iou_score) if overlay_analysis.iou_score else None,
-                        "shift_meters": float(overlay_analysis.centroid_displacement_meters) if overlay_analysis.centroid_displacement_meters else None,
-                    },
-                    "recommended_action": "Depute LandAmin for DGPS ground boundary demarcation.",
-                    "requires_human_review": True,
+                    "impact_on_assessment": "Spatial overlay cannot be reliably verified without confirmed CRS and adequate control points.",
+                    "remedy_action": "Georeference cadastral sheet with ground control points and explicit CRS transformation.",
+                    "is_blocking": True,
                 })
+            else:
+                facts.append({
+                    "subsystem": "CADASTRAL_SPATIAL",
+                    "fact_category": "VECTOR_OVERLAY_METROLOGY",
+                    "source_reference": f"PostGIS Spatial Engine Analysis {overlay_analysis.analysis_id} (CRS: {overlay_analysis.analysis_crs})",
+                    "source_retrieval_date": overlay_analysis.created_at,
+                    "raw_value": {
+                        "crs": overlay_analysis.analysis_crs,
+                        "iou_score": float(overlay_analysis.iou_score) if overlay_analysis.iou_score else None,
+                        "centroid_displacement_meters": float(overlay_analysis.centroid_displacement_meters) if overlay_analysis.centroid_displacement_meters else None,
+                        "hausdorff_distance_meters": float(overlay_analysis.hausdorff_distance_meters) if overlay_analysis.hausdorff_distance_meters else None,
+                        "discrepancy_taxonomy": overlay_analysis.discrepancy_taxonomy,
+                        "severity": overlay_analysis.discrepancy_severity,
+                    },
+                    "normalized_value": {
+                        "crs": overlay_analysis.analysis_crs,
+                        "iou": float(overlay_analysis.iou_score) if overlay_analysis.iou_score else 0.0,
+                        "centroid_shift_m": float(overlay_analysis.centroid_displacement_meters) if overlay_analysis.centroid_displacement_meters else 0.0,
+                    },
+                    "verification_status": "COMPUTED_METRIC",
+                    "limitations": "Numerical precision does not equal cadastral ground survey accuracy (±1-3m chain tolerance).",
+                })
+
+                # Spatial validation gate: check IoU and centroid displacement
+                if overlay_analysis.discrepancy_severity in ("HIGH", "CRITICAL") or (overlay_analysis.iou_score and overlay_analysis.iou_score < 0.70):
+                    findings.append({
+                        "dimension": RiskDimension.CADASTRAL_SPATIAL,
+                        "finding_code": f"FIND-SPA-{overlay_analysis.discrepancy_taxonomy or 'OVERLAY-SHIFT'}",
+                        "severity": FindingSeverity.HIGH if overlay_analysis.discrepancy_severity == "HIGH" else FindingSeverity.CRITICAL,
+                        "title": f"Cadastral Boundary Discrepancy: {overlay_analysis.discrepancy_taxonomy}",
+                        "description": (
+                            f"Spatial overlay between historical cadastral sheet and modern parcel shows significant variance. "
+                            f"IoU: {overlay_analysis.iou_score:.2f}, Centroid displacement: {overlay_analysis.centroid_displacement_meters:.1f}m. "
+                            f"{overlay_analysis.findings_summary or ''}"
+                        ),
+                        "supporting_evidence": {
+                            "crs": overlay_analysis.analysis_crs,
+                            "iou": float(overlay_analysis.iou_score) if overlay_analysis.iou_score else None,
+                            "shift_meters": float(overlay_analysis.centroid_displacement_meters) if overlay_analysis.centroid_displacement_meters else None,
+                        },
+                        "recommended_action": "Depute LandAmin for DGPS ground boundary demarcation.",
+                        "requires_human_review": True,
+                    })
         else:
             evidence_gaps.append({
                 "subsystem": "CADASTRAL_SPATIAL",
@@ -492,15 +519,30 @@ class EvidenceReconciliationEngine:
         ).all()
 
         if valuations:
+            has_admitted_val = False
             for val in valuations:
                 sched = db.query(MVRSchedule).filter(MVRSchedule.schedule_id == val.schedule_id).first()
                 sched_ver = sched.verification_status if sched else "UNVERIFIED"
 
                 # Upstream validation gate: Synthetic data handling
-                is_synthetic = (sched_ver == "SYNTHETIC_MOCK") or ("mock" in (sched.schedule_code.lower() if sched else ""))
+                is_synthetic = (
+                    (sched_ver in ("SYNTHETIC", "SYNTHETIC_MOCK", "SYNTHETIC_FIXTURE"))
+                    or (sched and getattr(sched, "source_provider", "") in ("SYNTHETIC_MOCK", "SYNTHETIC_FIXTURE"))
+                    or ("mock" in (sched.schedule_code.lower() if sched else ""))
+                    or ("synth" in (sched.schedule_code.lower() if sched else ""))
+                )
                 if is_synthetic and not include_synthetic_fixtures:
+                    evidence_gaps.append({
+                        "subsystem": "VALUATION",
+                        "gap_code": "GAP-VAL-SYNTHETIC-DATA-EXCLUDED",
+                        "description": f"MVR valuation schedule '{sched.schedule_code if sched else 'UNKNOWN'}' is synthetic and excluded from production assessment.",
+                        "impact_on_assessment": "Valuation relies on synthetic fixtures; official published Collectorate schedule required.",
+                        "remedy_action": "Import verified official MVR circle rate schedule for this mauza.",
+                        "is_blocking": False,
+                    })
                     continue  # Exclude synthetic fixture from production assessment per rule 6B
 
+                has_admitted_val = True
                 facts.append({
                     "subsystem": "VALUATION",
                     "fact_category": "MVR_VALUATION_RECORD",
@@ -541,6 +583,16 @@ class EvidenceReconciliationEngine:
                         "recommended_action": "Structure deed consideration at or above government assessment base to avoid penalty.",
                         "requires_human_review": False,
                     })
+
+            if not has_admitted_val and not any(g["gap_code"] == "GAP-VAL-SYNTHETIC-DATA-EXCLUDED" for g in evidence_gaps):
+                evidence_gaps.append({
+                    "subsystem": "VALUATION",
+                    "gap_code": "GAP-VAL-NO-ASSESSMENT",
+                    "description": "No official MVR circle rate valuation has been calculated for this parcel.",
+                    "impact_on_assessment": "Statutory stamp duty, registration fee, and undervaluation risks cannot be estimated.",
+                    "remedy_action": "Trigger MVR valuation calculation using property and road category.",
+                    "is_blocking": False,
+                })
         else:
             evidence_gaps.append({
                 "subsystem": "VALUATION",
@@ -562,6 +614,13 @@ class EvidenceReconciliationEngine:
 
         if relevant_docs:
             for doc in relevant_docs:
+                fields = db.query(ExtractedField).filter(ExtractedField.document_id == doc.document_id).all()
+                low_conf_fields = [f for f in fields if f.confidence_score is not None and f.confidence_score < 0.70]
+
+                doc_verification = "OPERATOR_SUPPLIED"
+                if doc.processing_status != "CONFIRMED":
+                    doc_verification = "UNVERIFIED_EXTRACTION"
+
                 facts.append({
                     "subsystem": "OCR_DOCUMENT",
                     "fact_category": "INGESTED_LEGAL_DOCUMENT",
@@ -571,10 +630,24 @@ class EvidenceReconciliationEngine:
                         "category": doc.category,
                         "filename": doc.original_filename,
                         "status": doc.processing_status,
+                        "low_confidence_fields_count": len(low_conf_fields),
                     },
                     "normalized_value": {"doc_category": doc.category},
-                    "verification_status": "OPERATOR_SUPPLIED",
+                    "verification_status": doc_verification,
+                    "limitations": "Raw OCR extractions are unverified until human review confirms deed schedules."
                 })
+
+                if low_conf_fields:
+                    findings.append({
+                        "dimension": RiskDimension.DOCUMENT_AUTHENTICITY,
+                        "finding_code": "FIND-DOC-UNCERTAIN-OCR-EXTRACTION",
+                        "severity": FindingSeverity.MEDIUM,
+                        "title": f"Uncertain OCR Extractions in {doc.original_filename}",
+                        "description": f"{len(low_conf_fields)} extracted fields have confidence < 0.70 and require manual verification.",
+                        "supporting_evidence": {"document_id": str(doc.document_id), "count": len(low_conf_fields)},
+                        "recommended_action": "Verify deed party names and plot numbers in Document OCR viewer.",
+                        "requires_human_review": True,
+                    })
         else:
             evidence_gaps.append({
                 "subsystem": "OCR_DOCUMENT",

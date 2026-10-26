@@ -91,6 +91,7 @@ class PassportSynthesisService:
         overall_tier, composite_score, dimension_scores = ExplainableRiskEvaluator.evaluate_risk(
             findings=findings_data,
             evidence_gaps=gaps_data,
+            facts=facts_data,
         )
 
         # 3. Determine assessment number and version
@@ -130,7 +131,7 @@ class PassportSynthesisService:
             status=AssessmentStatus.COMPLETED,
             overall_risk_tier=overall_tier,
             composite_priority_score=composite_score,
-            scoring_formula_version="v1.0-deterministic-weighted",
+            scoring_formula_version="v1.1-calibrated-separated-outputs",
             dimension_scores=dimension_scores,
             reconciliation_summary=summary_data,
             facts_count=len(facts_data),

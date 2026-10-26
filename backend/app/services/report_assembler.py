@@ -758,13 +758,17 @@ def _build_section_synthesis(db: Session, case: Case, parcel: Optional[Parcel]) 
     dimension_scores: List[SectionDimensionScoreItem] = []
     if assessment.dimension_scores and isinstance(assessment.dimension_scores, dict):
         for dim_code, d_data in assessment.dimension_scores.items():
+            if dim_code.startswith("_"):
+                continue
             if isinstance(d_data, dict):
+                score_val = d_data.get("priority_score", d_data.get("score", 0.0))
+                weight_val = d_data.get("weight_in_composite", d_data.get("weight", 0.0))
                 dimension_scores.append(
                     SectionDimensionScoreItem(
                         dimension=dim_code,
                         dimension_name=d_data.get("dimension_name", dim_code),
-                        score=float(d_data.get("score", 0.0)),
-                        weight=float(d_data.get("weight", 0.0)),
+                        score=float(score_val),
+                        weight=float(weight_val),
                         status=str(d_data.get("status", "NOT_EVALUATED")),
                         findings_count=int(d_data.get("findings_count", 0)),
                     )
