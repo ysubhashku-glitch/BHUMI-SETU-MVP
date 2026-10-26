@@ -270,6 +270,7 @@ def test_staging_smoke_e2e_workflow(client, db_session, tenant_a, user_a, client
     # -------------------------------------------------------------------------
     from app.core.storage import S3DocumentStorage, StorageException
     unconfigured_storage = S3DocumentStorage(bucket_name=None)
+    unconfigured_storage.bucket_name = None
     with pytest.raises(StorageException, match="NOT_CONFIGURED"):
         unconfigured_storage.put(b"content", "doc.pdf", "application/pdf")
 
