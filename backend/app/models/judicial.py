@@ -34,20 +34,29 @@ class JudicialRiskCategory(str):
     INJUNCTION_RISK = "INJUNCTION_RISK"
     REVENUE_MUTATION_DISPUTE = "REVENUE_MUTATION_DISPUTE"
     WRIT_LITIGATION = "WRIT_LITIGATION"
+    OTHER_CIVIL = "OTHER_CIVIL"
     OTHER = "OTHER"
 
 class ParcelMatchCategory(str):
     EXACT_IDENTIFIER_MATCH = "EXACT_IDENTIFIER_MATCH"
     STRONG_CORROBORATED_MATCH = "STRONG_CORROBORATED_MATCH"
     WEAK_CANDIDATE_REVIEW_REQUIRED = "WEAK_CANDIDATE_REVIEW_REQUIRED"
+    NAME_ONLY = "NAME_ONLY"
     REJECTED_MATCH = "REJECTED_MATCH"
     INSUFFICIENT_DATA = "INSUFFICIENT_DATA"
+
+# Alias for external synthesis and testing compatibility
+JudicialMatchCategory = ParcelMatchCategory
 
 class MatchReviewStatus(str):
     PENDING_REVIEW = "PENDING_REVIEW"
     VERIFIED_ASSOCIATED = "VERIFIED_ASSOCIATED"
     DISMISSED_UNRELATED = "DISMISSED_UNRELATED"
     INSUFFICIENT_EVIDENCE = "INSUFFICIENT_EVIDENCE"
+
+# Alias for external synthesis and testing compatibility
+JudicialReviewStatus = MatchReviewStatus
+
 
 
 class JudicialCase(Base):
