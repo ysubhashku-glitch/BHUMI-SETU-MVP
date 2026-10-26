@@ -26,9 +26,8 @@ COPY --from=ghcr.io/astral-sh/uv:0.12.5 /uv /bin/uv
 
 # Create virtual environment and sync dependencies
 COPY pyproject.toml uv.lock ./
-RUN uv venv /opt/venv && \
-    . /opt/venv/bin/activate && \
-    uv sync --frozen --no-install-project
+ENV UV_PROJECT_ENVIRONMENT=/opt/venv
+RUN uv sync --frozen --no-install-project
 
 # Stage 2: Minimal Distroless-like Runtime Image
 FROM python:3.14-slim AS runner
