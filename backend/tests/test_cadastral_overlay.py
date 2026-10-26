@@ -229,8 +229,10 @@ def test_kmz_path_traversal_zip_slip_rejection():
 
 
 def test_raster_png_ingestion():
-    # 1x1 valid PNG bytes
-    png_bytes = b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x06\x00\x00\x00\x1f\x15c4\x00\x00\x00\nIDATx\x9cc\x00\x01\x00\x00\x05\x00\x01\r\n-\xb4\x00\x00\x00\x00IEND\xaeB`\x82"
+    from PIL import Image
+    buf = io.BytesIO()
+    Image.new("RGB", (1, 1), color="white").save(buf, format="PNG")
+    png_bytes = buf.getvalue()
     res = process_cadastral_upload("danapur_sheet.png", png_bytes)
     assert res["file_format"] == CadastralAssetFormat.PNG
     assert res["is_vector"] is False

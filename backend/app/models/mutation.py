@@ -80,6 +80,7 @@ class MutationDocumentType(str, Enum):
 class MutationMatchingMethod(str, Enum):
     EXACT_IDENTIFIER_MATCH = "EXACT_IDENTIFIER_MATCH"       # Case number + Anchal + Mauza match
     CORROBORATED_KHATA_PLOT = "CORROBORATED_KHATA_PLOT"     # Plot, Khata, Mauza, and Seller match
+    CORROBORATED_PLOT_KHATA = "CORROBORATED_PLOT_KHATA"     # Plot, Khata, Mauza, and Seller match (alias)
     DEED_REFERENCE_MATCH = "DEED_REFERENCE_MATCH"           # Exact Registered Deed No + Date match
     PARTY_NAME_CORROBORATED = "PARTY_NAME_CORROBORATED"     # Name match corroborated with village & plot
     AMBIGUOUS_MULTIPLE_CANDIDATES = "AMBIGUOUS_MULTIPLE_CANDIDATES" # Multiple potential plots found

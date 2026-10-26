@@ -252,7 +252,7 @@ class KaithiImagePreprocessor:
 
         hist = bin_img.histogram()
         total = sum(hist)
-        dark_pixels = hist[0] if len(hist) > 0 else 0
+        dark_pixels = sum(hist[:128]) if len(hist) >= 128 else (hist[0] if len(hist) > 0 else 0)
         ink_ratio = round(dark_pixels / max(total, 1), 4)
 
         return PreprocessedImageResult(

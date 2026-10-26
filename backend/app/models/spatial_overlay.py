@@ -216,7 +216,7 @@ class CadastralParcelGeometry(Base):
 
     # Relationships
     parcel = relationship("Parcel")
-    case = relationship("Case")
+    case = relationship("Case", back_populates="cadastral_geometries")
     map_asset = relationship("CadastralMapAsset", back_populates="parcel_geometries")
     georeference_session = relationship("GeoreferenceSession", back_populates="derived_geometries")
 
@@ -261,6 +261,8 @@ class BoundaryOverlayAnalysis(Base):
     created_at = sa.Column(sa.DateTime(timezone=True), default=utc_now, nullable=False)
 
     # Relationships
+    case = relationship("Case", back_populates="boundary_analyses")
+    parcel = relationship("Parcel")
     baseline_geometry = relationship("CadastralParcelGeometry", foreign_keys=[baseline_geometry_id])
     comparison_geometry = relationship("CadastralParcelGeometry", foreign_keys=[comparison_geometry_id])
     field_task = relationship("FieldVerificationTask")

@@ -59,8 +59,8 @@ CASE_NUMBER_REGEX = re.compile(
     r"(?:Mutation\s*Case|Case\s*No\.?|वाद\s*संख्या|वाद\s*सं\.?|दाखिल[\s\-]*खारिज\s*वाद)[\s\:\-\/]*([A-Z0-9\-\/]+)",
     re.IGNORECASE,
 )
-KHATA_REGEX = re.compile(r"(?:Khata|खाता\s*(?:संख्या|नं\.?|क्र\.?))[\s\:\-\/]*(\d+)", re.IGNORECASE)
-KHESRA_REGEX = re.compile(r"(?:Khesra|Plot|खेसरा\s*(?:संख्या|नं\.?)|प्लॉट\s*संख्या)[\s\:\-\/]*(\d+)", re.IGNORECASE)
+KHATA_REGEX = re.compile(r"(?:Khata|खाता)(?:\s*(?:संख्या|नं\.?|क्र\.?))?[\s\:\-\/]*(\d+)", re.IGNORECASE)
+KHESRA_REGEX = re.compile(r"(?:Khesra|Plot|खेसरा|प्लॉट)(?:\s*(?:संख्या|नं\.?|क्र\.?))?[\s\:\-\/]*(\d+)", re.IGNORECASE)
 MAUZA_REGEX = re.compile(r"(?:Mauza|Village|मौजा|ग्राम)[\s\:\-\/]*([A-Za-z\u0900-\u097F\s]+?)(?:,|\n|Thana|थाना|$)", re.IGNORECASE)
 DEED_REGEX = re.compile(r"(?:Deed\s*No\.?|दस्तावेज\s*संख्या|केवाला\s*संख्या)[\s\:\-\/]*([A-Za-z0-9\-\/]+)", re.IGNORECASE)
 DATE_REGEX = re.compile(r"(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{4})")
@@ -193,10 +193,10 @@ class MutationExtractor:
 
         s = raw_status.strip().lower()
 
-        if any(w in s for w in ["स्वीकृत", "approved", "shuddhi patra", "शुद्धि पत्र", "disposed approved"]):
-            return MutationStatus.APPROVED, raw_status
-        elif any(w in s for w in ["अस्वीकृत", "rejected", "खारिज", "disposed rejected"]):
+        if any(w in s for w in ["अस्वीकृत", "rejected", "खारिज", "disposed rejected", "disapproved"]):
             return MutationStatus.REJECTED, raw_status
+        elif any(w in s for w in ["स्वीकृत", "approved", "shuddhi patra", "शुद्धि पत्र", "disposed approved"]):
+            return MutationStatus.APPROVED, raw_status
         elif any(w in s for w in ["नोटिस", "notice", "form ix", "form-ix"]):
             return MutationStatus.NOTICE_ISSUED, raw_status
         elif any(w in s for w in ["सुनवाई", "hearing", "objection", "आपत्ति"]):

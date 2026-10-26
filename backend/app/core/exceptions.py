@@ -5,10 +5,13 @@ class BhumiSetuException(Exception):
     def __init__(
         self,
         code: str,
-        message: str,
+        message: Optional[str] = None,
         status_code: int = status.HTTP_400_BAD_REQUEST,
         details: Optional[Any] = None
     ):
+        if message is None:
+            message = code
+            code = "BHUMISETU_ERROR"
         super().__init__(message)
         self.code = code
         self.message = message
