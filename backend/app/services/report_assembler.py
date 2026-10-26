@@ -38,7 +38,10 @@ from app.schemas.report import (
     SectionJudicialRiskData,
     SectionValuationItem,
     SectionValuationData,
+    SectionMutationItem,
+    SectionMutationData,
 )
+from app.models.mutation import MutationCase, MutationStatus, MutationEntityResolution
 from app.services.amin_service import calculate_polygon_area_acres
 
 REPORT_LEGAL_DISCLAIMER = (
@@ -140,6 +143,11 @@ def assemble_report_data(
     section_valuation = _build_section_valuation(db, case, target_parcel)
 
     # -------------------------------------------------------------
+    # Section Mutation: Dakhil-Kharij Mutation Intelligence & Proceedings
+    # -------------------------------------------------------------
+    section_mutation = _build_section_mutation(db, case, target_parcel)
+
+    # -------------------------------------------------------------
     # Section 1: Cover & Scope
     # -------------------------------------------------------------
     section_1 = Section1CoverData(
@@ -163,6 +171,7 @@ def assemble_report_data(
             "field_survey_available": section_5.is_available,
             "judicial_search_performed": section_judicial.is_searched,
             "valuation_assessment_performed": section_valuation.is_assessed,
+            "mutation_history_reviewed": section_mutation.is_reviewed,
         },
         disclaimer=REPORT_LEGAL_DISCLAIMER
     )
@@ -178,6 +187,7 @@ def assemble_report_data(
         section_8_findings_actions=section_8,
         section_judicial_risk=section_judicial,
         section_valuation=section_valuation,
+        section_mutation=section_mutation,
         verification_url=verification_url,
         verification_token=token
     )
@@ -614,4 +624,79 @@ def _build_section_valuation(db: Session, case: Case, parcel: Optional[Parcel]) 
     return SectionValuationData(
         is_assessed=len(items) > 0,
         valuations=items,
+    )
+
+def _build_section_mutation(db: Session, case: Case, parcel: Optional[Parcel]) -> SectionMutationData:
+    """
+    Assembles Dakhil-Kharij mutation intelligence and proceeding timeline items for Land Intelligence Report.
+    """
+    from sqlalchemy import or_
+    
+    query = db.query(MutationCase).filter(MutationCase.org_id == case.org_id)
+    if parcel:
+        query = query.filter(
+            or_(
+                MutationCase.parcel_id == parcel.parcel_id,
+                MutationCase.case_id == case.case_id,
+                MutationCase.resolutions.any(MutationEntityResolution.parcel_id == parcel.parcel_id),
+            )
+        )
+    else:
+        query = query.filter(MutationCase.case_id == case.case_id)
+
+    db_cases = query.all()
+    items: List[SectionMutationItem] = []
+    active_count = 0
+    rejection_count = 0
+    approved_count = 0
+
+    for mc in db_cases:
+        if mc.normalized_status in (
+            MutationStatus.RECEIVED,
+            MutationStatus.SUBMITTED,
+            MutationStatus.UNDER_SCRUTINY,
+            MutationStatus.NOTICE_ISSUED,
+            MutationStatus.HEARING_PENDING,
+            MutationStatus.UNDER_REVIEW,
+        ):
+            active_count += 1
+        elif mc.normalized_status == MutationStatus.REJECTED:
+            rejection_count += 1
+        elif mc.normalized_status == MutationStatus.APPROVED:
+            approved_count += 1
+
+        items.append(
+            SectionMutationItem(
+                case_id=str(mc.mutation_case_id),
+                case_number=mc.case_number,
+                filing_year=mc.filing_year,
+                district=mc.district,
+                circle=mc.circle,
+                mauza=mc.mauza,
+                khata_number=mc.khata_number,
+                khesra_number=mc.khesra_number,
+                mutation_type=mc.mutation_type.value,
+                normalized_status=mc.normalized_status.value,
+                raw_source_status=mc.raw_source_status,
+                rejection_reason_code=mc.rejection_reason_code,
+                filing_date=mc.filing_date.isoformat() if mc.filing_date else None,
+                disposal_date=mc.disposal_date.isoformat() if mc.disposal_date else None,
+                applicant_names=mc.applicant_names or [],
+                seller_names=mc.seller_names or [],
+                source_portal=mc.source_portal,
+                source_authority=mc.source_authority,
+                last_observation_date=mc.last_source_observation.strftime("%Y-%m-%d %H:%M:%S") if mc.last_source_observation else None,
+                events_count=len(mc.events),
+                has_rejection_order=(mc.normalized_status == MutationStatus.REJECTED),
+                verification_status=mc.verification_status.value,
+            )
+        )
+
+    return SectionMutationData(
+        is_reviewed=len(items) > 0,
+        total_cases_tracked=len(items),
+        active_proceedings_count=active_count,
+        rejection_orders_count=rejection_count,
+        approved_shuddhi_patras_count=approved_count,
+        mutation_cases=items,
     )

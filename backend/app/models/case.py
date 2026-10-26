@@ -64,6 +64,7 @@ class Case(Base):
     valuations = relationship("PropertyValuation", back_populates="case", cascade="all, delete-orphan")
     cadastral_geometries = relationship("CadastralParcelGeometry", back_populates="case")
     boundary_analyses = relationship("BoundaryOverlayAnalysis", back_populates="case")
+    mutation_cases = relationship("MutationCase", back_populates="case")
 
 class CaseParcel(Base):
     __tablename__ = "case_parcels"

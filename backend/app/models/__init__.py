@@ -62,6 +62,19 @@ from app.models.spatial_overlay import (
     DiscrepancySeverity,
     BoundaryReviewDecision,
 )
+from app.models.mutation import (
+    MutationCase,
+    MutationEvent,
+    MutationDocument,
+    MutationEntityResolution,
+    MutationReconciliationRun,
+    MutationType,
+    MutationStatus,
+    MutationEventType,
+    MutationDocumentType,
+    MutationMatchingMethod,
+    MutationVerificationStatus,
+)
 
 __all__ = [
     "Base",
@@ -151,4 +164,15 @@ __all__ = [
     "DiscrepancyTaxonomy",
     "DiscrepancySeverity",
     "BoundaryReviewDecision",
+    "MutationCase",
+    "MutationEvent",
+    "MutationDocument",
+    "MutationEntityResolution",
+    "MutationReconciliationRun",
+    "MutationType",
+    "MutationStatus",
+    "MutationEventType",
+    "MutationDocumentType",
+    "MutationMatchingMethod",
+    "MutationVerificationStatus",
 ]

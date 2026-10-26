@@ -431,6 +431,40 @@ def generate_land_intelligence_pdf(data: ReportDataStructure) -> bytes:
         pdf.multi_cell(190, 2.8, v_data.limitation_statement, border=1)
         pdf.ln(2)
 
+    # =========================================================================
+    # SECTION MUTATION: BIHAR DAKHIL-KHARIJ MUTATION INTELLIGENCE
+    # =========================================================================
+    if data.section_mutation and data.section_mutation.mutation_cases:
+        m_data = data.section_mutation
+        pdf.section_header(
+            "Mutation Intelligence — Dakhil-Kharij Proceedings & Status",
+            f"Official Circle Office proceedings, Form-IX notices, orders & Register-II updates ({len(m_data.mutation_cases)} tracked records)"
+        )
+        with pdf.table(col_widths=(45, 30, 40, 35, 40), text_align="L", line_height=5, headings_style=table_head) as table:
+            row = table.row()
+            row.cell("Case No & Anchal")
+            row.cell("Mutation Type")
+            row.cell("Reported Status")
+            row.cell("Filing / Disposal")
+            row.cell("Rejection / Order Grounds")
+
+            for m_item in m_data.mutation_cases[:4]:
+                r = table.row()
+                r.cell(f"{pdf.sanitize(m_item.case_number)}\n{pdf.sanitize(m_item.district)} / {pdf.sanitize(m_item.circle)}")
+                r.cell(f"{pdf.sanitize(m_item.mutation_type)}\nPlot: {m_item.khesra_number or 'N/A'}")
+                status_str = f"{m_item.normalized_status}\n({pdf.sanitize(m_item.raw_source_status or '')[:20]})"
+                r.cell(status_str)
+                filing_str = f"Filed: {m_item.filing_date or 'N/A'}\nOrder: {m_item.disposal_date or 'Pending'}"
+                r.cell(filing_str)
+                grounds_str = f"Ground: {m_item.rejection_reason_code or 'None'}\nAuthority: {pdf.sanitize(m_item.source_authority)[:20]}"
+                r.cell(grounds_str)
+        pdf.ln(1)
+
+        # Statutory Mutation Limitation Statement Box
+        pdf.set_font(pdf.unicode_font_name, size=6)
+        pdf.set_text_color(100, 116, 139)
+        pdf.multi_cell(190, 2.8, m_data.limitation_statement, border=1)
+        pdf.ln(2)
 
     # =========================================================================
     # SECTION 8: FINDINGS, ACTIONS, QR CODE & DISCLAIMER

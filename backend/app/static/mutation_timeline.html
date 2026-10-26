@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bhumi Setu | Mutation Intelligence & Property Passport Timeline</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-dark: #090d16;
+      --card-bg: rgba(18, 26, 43, 0.75);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --primary: #38bdf8;
+      --primary-glow: rgba(56, 189, 248, 0.25);
+      --emerald: #10b981;
+      --emerald-glow: rgba(16, 185, 129, 0.2);
+      --amber: #f59e0b;
+      --amber-glow: rgba(245, 158, 11, 0.2);
+      --rose: #f43f5e;
+      --rose-glow: rgba(244, 63, 94, 0.25);
+      --indigo: #6366f1;
+      --text-main: #f1f5f9;
+      --text-muted: #94a3b8;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background-color: var(--bg-dark);
+      background-image: 
+        radial-gradient(at 0% 0%, rgba(56, 189, 248, 0.12) 0px, transparent 50%),
+        radial-gradient(at 100% 100%, rgba(99, 102, 241, 0.12) 0px, transparent 50%);
+      color: var(--text-main);
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      min-height: 100vh;
+      padding: 24px;
+    }
+
+    .container {
+      max-width: 1280px;
+      margin: 0 auto;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 24px;
+      border-bottom: 1px solid var(--card-border);
+      margin-bottom: 28px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .logo-badge {
+      background: linear-gradient(135deg, #0284c7, #6366f1);
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      font-weight: 800;
+      box-shadow: 0 0 20px var(--primary-glow);
+    }
+
+    h1 {
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    .tagline {
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    .btn {
+      background: linear-gradient(135deg, #0ea5e9, #6366f1);
+      color: white;
+      border: none;
+      padding: 10px 18px;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 13px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s ease;
+      box-shadow: 0 4px 14px rgba(14, 165, 233, 0.3);
+    }
+
+    .btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(14, 165, 233, 0.45);
+    }
+
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--card-border);
+      color: var(--text-main);
+      box-shadow: none;
+    }
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    /* Statutory Notice Box */
+    .statutory-banner {
+      background: rgba(245, 158, 11, 0.08);
+      border: 1px solid rgba(245, 158, 11, 0.3);
+      border-radius: 12px;
+      padding: 16px 20px;
+      margin-bottom: 28px;
+      display: flex;
+      gap: 16px;
+      align-items: flex-start;
+    }
+
+    .statutory-icon {
+      font-size: 22px;
+      line-height: 1;
+    }
+
+    .statutory-text h4 {
+      font-size: 13px;
+      font-weight: 700;
+      color: #fbbf24;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-bottom: 4px;
+    }
+
+    .statutory-text p {
+      font-size: 12.5px;
+      color: #e2e8f0;
+      line-height: 1.5;
+    }
+
+    /* Metric Cards Grid */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 18px;
+      margin-bottom: 28px;
+    }
+
+    .stat-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      backdrop-filter: blur(12px);
+      border-radius: 14px;
+      padding: 18px 20px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .stat-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0; height: 3px;
+    }
+
+    .stat-card.blue::before { background: var(--primary); }
+    .stat-card.amber::before { background: var(--amber); }
+    .stat-card.rose::before { background: var(--rose); }
+    .stat-card.emerald::before { background: var(--emerald); }
+
+    .stat-title {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+
+    .stat-value {
+      font-size: 28px;
+      font-weight: 800;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .stat-sub {
+      font-size: 11.5px;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    /* Controls Bar */
+    .controls-bar {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 14px;
+      padding: 18px 22px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      align-items: center;
+      margin-bottom: 28px;
+      backdrop-filter: blur(12px);
+    }
+
+    .input-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .input-group label {
+      font-size: 11px;
+      text-transform: uppercase;
+      font-weight: 600;
+      color: var(--text-muted);
+      letter-spacing: 0.04em;
+    }
+
+    .input-group input, .input-group select {
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid var(--card-border);
+      color: var(--text-main);
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-size: 13px;
+      outline: none;
+      transition: border 0.2s;
+    }
+
+    .input-group input:focus, .input-group select:focus {
+      border-color: var(--primary);
+    }
+
+    /* Timeline Section */
+    .timeline-container {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      padding: 26px;
+      backdrop-filter: blur(12px);
+    }
+
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+      padding-bottom: 14px;
+      border-bottom: 1px solid var(--card-border);
+    }
+
+    .section-title {
+      font-size: 16px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .timeline {
+      position: relative;
+      padding-left: 28px;
+    }
+
+    .timeline::before {
+      content: '';
+      position: absolute;
+      top: 10px;
+      bottom: 10px;
+      left: 10px;
+      width: 2px;
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    .timeline-item {
+      position: relative;
+      margin-bottom: 24px;
+    }
+
+    .timeline-dot {
+      position: absolute;
+      left: -28px;
+      top: 6px;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: var(--bg-dark);
+      border: 3px solid var(--primary);
+      box-shadow: 0 0 10px var(--primary-glow);
+    }
+
+    .timeline-dot.danger {
+      border-color: var(--rose);
+      box-shadow: 0 0 10px var(--rose-glow);
+    }
+    .timeline-dot.success {
+      border-color: var(--emerald);
+      box-shadow: 0 0 10px var(--emerald-glow);
+    }
+    .timeline-dot.warning {
+      border-color: var(--amber);
+      box-shadow: 0 0 10px var(--amber-glow);
+    }
+
+    .timeline-card {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 12px;
+      padding: 16px 20px;
+      transition: all 0.2s ease;
+    }
+
+    .timeline-card:hover {
+      background: rgba(255, 255, 255, 0.05);
+      border-color: rgba(255, 255, 255, 0.12);
+    }
+
+    .timeline-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .timeline-stage {
+      font-size: 11.5px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--primary);
+    }
+
+    .timeline-timestamp {
+      font-size: 12px;
+      color: var(--text-muted);
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .timeline-summary {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+    }
+
+    .badge-portal {
+      background: rgba(56, 189, 248, 0.15);
+      color: #38bdf8;
+      border: 1px solid rgba(56, 189, 248, 0.3);
+    }
+
+    .badge-operator {
+      background: rgba(99, 102, 241, 0.15);
+      color: #818cf8;
+      border: 1px solid rgba(99, 102, 241, 0.3);
+    }
+
+    .badge-rejected {
+      background: rgba(244, 63, 94, 0.15);
+      color: #fb7185;
+      border: 1px solid rgba(244, 63, 94, 0.3);
+    }
+
+    .badge-approved {
+      background: rgba(16, 185, 129, 0.15);
+      color: #34d399;
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+
+    .timeline-details {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 8px;
+      margin-top: 12px;
+      padding-top: 10px;
+      border-top: 1px dashed rgba(255, 255, 255, 0.08);
+      font-size: 12px;
+    }
+
+    .detail-item span {
+      color: var(--text-muted);
+    }
+
+    /* Modal for Operator Ingestion */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(6px);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .modal-content {
+      background: #111827;
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      max-width: 600px;
+      width: 100%;
+      padding: 24px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--card-border);
+    }
+
+    .modal-form {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+
+    .form-full { grid-column: span 2; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="brand">
+        <div class="logo-badge">दा</div>
+        <div>
+          <h1>Bihar Dakhil-Kharij Mutation Intelligence</h1>
+          <div class="tagline">Property Passport Synchronization &amp; Procedural Docket Ledger</div>
+        </div>
+      </div>
+      <div>
+        <button class="btn" onclick="openImportModal()">+ Operator Import Docket</button>
+      </div>
+    </header>
+
+    <!-- Statutory Notice Box -->
+    <div class="statutory-banner">
+      <div class="statutory-icon">⚖️</div>
+      <div class="statutory-text">
+        <h4>Statutory Notice: Bihar Land Reforms &amp; Mutation Precept</h4>
+        <p>
+          Per the Supreme Court of India in <strong>Suraj Bhan v. Financial Commissioner (2007) 6 SCC 186</strong>, 
+          mutation entries (दाखिल-खारिज) are fiscal records maintained solely for land revenue collection. 
+          A sanctioned mutation or issued Shuddhi Patra (शुद्धि पत्र) does NOT confer, establish, or extinguish legal ownership or title. 
+          Absence of a recorded mutation does not prove unencumbered ownership.
+        </p>
+      </div>
+    </div>
+
+    <!-- Statistics Overview Cards -->
+    <div class="stats-grid">
+      <div class="stat-card blue">
+        <div class="stat-title">Tracked Proceedings</div>
+        <div class="stat-value" id="statTracked">4</div>
+        <div class="stat-sub">Pilot Anchal Cases</div>
+      </div>
+      <div class="stat-card amber">
+        <div class="stat-title">Active Proceedings</div>
+        <div class="stat-value" id="statActive">1</div>
+        <div class="stat-sub">Under Scrutiny / Notice</div>
+      </div>
+      <div class="stat-card rose">
+        <div class="stat-title">Adverse Rejections</div>
+        <div class="stat-value" id="statRejected">2</div>
+        <div class="stat-sub">Dispute / Area Deficit</div>
+      </div>
+      <div class="stat-card emerald">
+        <div class="stat-title">Approved Shuddhi Patras</div>
+        <div class="stat-value" id="statApproved">1</div>
+        <div class="stat-sub">Register-II Updated</div>
+      </div>
+    </div>
+
+    <!-- Filter / Selector Bar -->
+    <div class="controls-bar">
+      <div class="input-group">
+        <label>District</label>
+        <select id="districtFilter" onchange="filterCases()">
+          <option value="Patna">Patna</option>
+          <option value="Gaya">Gaya</option>
+        </select>
+      </div>
+      <div class="input-group">
+        <label>Circle (Anchal)</label>
+        <select id="circleFilter" onchange="filterCases()">
+          <option value="Danapur">Danapur</option>
+          <option value="Patna Sadar">Patna Sadar</option>
+          <option value="Bodh Gaya">Bodh Gaya</option>
+        </select>
+      </div>
+      <div class="input-group">
+        <label>Cadastral Mauza</label>
+        <input type="text" id="mauzaFilter" placeholder="Mustafapur" value="Mustafapur">
+      </div>
+      <div class="input-group">
+        <label>Plot (Khesra)</label>
+        <input type="text" id="khesraFilter" placeholder="128" value="128" style="width: 80px;">
+      </div>
+      <div class="input-group" style="align-self: flex-end;">
+        <button class="btn btn-secondary" onclick="loadTimeline()">Sync Property Passport</button>
+      </div>
+    </div>
+
+    <!-- Timeline Container -->
+    <div class="timeline-container">
+      <div class="section-header">
+        <div class="section-title">
+          <span>📜 Chronological Mutation Timeline</span>
+          <span class="badge badge-portal">Source Attributed</span>
+        </div>
+        <div style="font-size: 12px; color: var(--text-muted);" id="syncTimestamp">
+          Last Synchronized: 2024-04-18T10:00:00Z
+        </div>
+      </div>
+
+      <div class="timeline" id="timelineList">
+        <!-- Rendered dynamically -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Operator Import Modal -->
+  <div class="modal-overlay" id="importModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Operator-Assisted Mutation Ingestion</h3>
+        <button class="btn btn-secondary" style="padding: 4px 10px;" onclick="closeImportModal()">✕</button>
+      </div>
+      <div class="modal-form">
+        <div class="input-group">
+          <label>Case Number</label>
+          <input type="text" id="modalCaseNo" placeholder="MUT-2024-DAN-00999">
+        </div>
+        <div class="input-group">
+          <label>Filing Year</label>
+          <input type="number" id="modalYear" value="2024">
+        </div>
+        <div class="input-group">
+          <label>District</label>
+          <input type="text" id="modalDistrict" value="Patna">
+        </div>
+        <div class="input-group">
+          <label>Circle</label>
+          <input type="text" id="modalCircle" value="Danapur">
+        </div>
+        <div class="input-group">
+          <label>Mauza</label>
+          <input type="text" id="modalMauza" value="Mustafapur">
+        </div>
+        <div class="input-group">
+          <label>Plot / Khesra</label>
+          <input type="text" id="modalKhesra" value="128">
+        </div>
+        <div class="input-group form-full">
+          <label>Applicant Name (Buyer)</label>
+          <input type="text" id="modalApplicant" placeholder="Ramesh Kumar">
+        </div>
+        <div class="input-group form-full">
+          <label>Reported Status</label>
+          <select id="modalStatus">
+            <option value="RECEIVED">RECEIVED (प्रक्रियाधीन)</option>
+            <option value="NOTICE_ISSUED">NOTICE_ISSUED (Form-IX जारी)</option>
+            <option value="APPROVED">APPROVED (स्वीकृत - Shuddhi Patra)</option>
+            <option value="REJECTED">REJECTED (खारिज - प्रतिकूल आदेश)</option>
+          </select>
+        </div>
+        <div class="input-group form-full">
+          <label>Rejection Reason Code (if applicable)</label>
+          <select id="modalRejectionCode">
+            <option value="">None (Not Rejected)</option>
+            <option value="LAND_DISPUTED">LAND_DISPUTED (विवादित भूमि / सिविल कोर्ट वाद)</option>
+            <option value="AREA_DEFICIT">AREA_DEFICIT (रकबा अपर्याप्त / विक्रेता का रकबा शून्य)</option>
+            <option value="TITLE_INJUNCTION">TITLE_INJUNCTION (न्यायालय स्थगन आदेश)</option>
+            <option value="INSUFFICIENT_DOCUMENTS">INSUFFICIENT_DOCUMENTS (अस्पष्ट विलेख)</option>
+          </select>
+        </div>
+        <div class="input-group form-full" style="margin-top: 12px; display: flex; justify-content: flex-end; gap: 10px;">
+          <button class="btn btn-secondary" onclick="closeImportModal()">Cancel</button>
+          <button class="btn" onclick="submitImportDocket()">Ingest Certified Docket</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const sampleEvents = [
+      {
+        timestamp: "2024-02-20 10:30",
+        stage: "PETITION_SUBMISSION",
+        summary: "Online mutation application submitted via Bihar Bhumi portal.",
+        authority: "Circle Officer, Danapur",
+        provenance: "OFFICIAL_GOVERNMENT_PORTAL",
+        badgeClass: "badge-portal",
+        dotClass: "",
+        details: { case: "MUT-2024-DAN-00104", khata: "45", khesra: "128", deed: "DEED-2024-PAT-8891" }
+      },
+      {
+        timestamp: "2024-03-05 11:00",
+        stage: "STATUTORY_NOTICE",
+        summary: "General and special notice issued under Form-IX inviting public objections within 14 days.",
+        authority: "Circle Office, Danapur",
+        provenance: "OFFICIAL_GOVERNMENT_PORTAL",
+        badgeClass: "badge-portal",
+        dotClass: "warning",
+        details: { doc: "FORM_IX_NOTICE_104.pdf", expiry: "2024-03-19" }
+      },
+      {
+        timestamp: "2024-03-24 16:00",
+        stage: "FIELD_INQUIRY",
+        summary: "Halka Karamchari reported applicant in peaceful physical possession; CI recommended approval.",
+        authority: "Circle Inspector Danapur",
+        provenance: "OFFICIAL_GOVERNMENT_PORTAL",
+        badgeClass: "badge-portal",
+        dotClass: "",
+        details: { posession: "Peaceful", recommendation: "Sanction Mutation" }
+      },
+      {
+        timestamp: "2024-04-15 15:30",
+        stage: "FINAL_DISPOSAL",
+        summary: "Circle Officer Danapur sanctioned mutation order in favor of buyer.",
+        authority: "Circle Officer, Danapur",
+        provenance: "OFFICIAL_GOVERNMENT_PORTAL",
+        badgeClass: "badge-approved",
+        dotClass: "success",
+        details: { order: "Sanctioned under Bihar Land Reforms Act", buyer: "Ramesh Kumar Sharma" }
+      },
+      {
+        timestamp: "2024-04-18 10:00",
+        stage: "REGISTER_II_UPDATE",
+        summary: "Correction slip (Shuddhi Patra) issued. Register-II updated with new Jamabandi entry.",
+        authority: "Circle Officer, Danapur",
+        provenance: "OFFICIAL_GOVERNMENT_PORTAL",
+        badgeClass: "badge-approved",
+        dotClass: "success",
+        details: { shuddhi_patra: "SP-2024-DAN-104", jamabandi: "JB-1044-NEW" }
+      }
+    ];
+
+    function renderTimeline(events) {
+      const list = document.getElementById("timelineList");
+      list.innerHTML = "";
+      events.forEach(ev => {
+        const item = document.createElement("div");
+        item.className = "timeline-item";
+        item.innerHTML = `
+          <div class="timeline-dot ${ev.dotClass}"></div>
+          <div class="timeline-card">
+            <div class="timeline-meta">
+              <span class="timeline-stage">${ev.stage}</span>
+              <div>
+                <span class="badge ${ev.badgeClass}">${ev.provenance}</span>
+                <span class="timeline-timestamp">${ev.timestamp}</span>
+              </div>
+            </div>
+            <div class="timeline-summary">${ev.summary}</div>
+            <div style="font-size: 12px; color: var(--text-muted);">Authority: <strong>${ev.authority}</strong></div>
+            <div class="timeline-details">
+              ${Object.entries(ev.details).map(([k, v]) => `
+                <div class="detail-item"><span>${k.toUpperCase()}:</span> ${v}</div>
+              `).join('')}
+            </div>
+          </div>
+        `;
+        list.appendChild(item);
+      });
+    }
+
+    function loadTimeline() {
+      renderTimeline(sampleEvents);
+    }
+
+    function openImportModal() {
+      document.getElementById("importModal").style.display = "flex";
+    }
+
+    function closeImportModal() {
+      document.getElementById("importModal").style.display = "none";
+    }
+
+    function submitImportDocket() {
+      const caseNo = document.getElementById("modalCaseNo").value || "MUT-2024-OP-901";
+      const status = document.getElementById("modalStatus").value;
+      const applicant = document.getElementById("modalApplicant").value || "Operator Ingestion";
+      const rejCode = document.getElementById("modalRejectionCode").value;
+
+      const isRej = (status === "REJECTED");
+      const newEv = {
+        timestamp: new Date().toISOString().replace('T', ' ').substring(0, 16),
+        stage: isRej ? "ADVERSE_REJECTION" : "FINAL_DISPOSAL",
+        summary: isRej 
+          ? `Operator recorded adverse rejection order. Grounds: ${rejCode || 'Defect in title'}`
+          : `Operator recorded sanctioned order for ${applicant}.`,
+        authority: "Circle Officer (Operator Ingested Docket)",
+        provenance: "OPERATOR_CERTIFIED_DOCUMENT",
+        badgeClass: isRej ? "badge-rejected" : "badge-operator",
+        dotClass: isRej ? "danger" : "warning",
+        details: { case: caseNo, applicant: applicant, status: status, rejection_code: rejCode || "N/A" }
+      };
+
+      sampleEvents.push(newEv);
+      renderTimeline(sampleEvents);
+      closeImportModal();
+      alert("Certified mutation docket ingested with cryptographic payload hash.");
+    }
+
+    // Initial render
+    window.addEventListener("DOMContentLoaded", () => {
+      loadTimeline();
+    });
+  </script>
+</body>
+</html>

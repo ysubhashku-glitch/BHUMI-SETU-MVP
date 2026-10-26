@@ -24,6 +24,7 @@ from app.routers import (
     judicial_router,
     valuation_router,
     spatial_overlay_router,
+    mutation_router,
 )
 
 # Configure structured logging
@@ -127,6 +128,13 @@ def cadastral_overlay_ui():
         return FileResponse(static_file, media_type="text/html")
     return JSONResponse(status_code=404, content={"message": "Cadastral overlay UI not found."})
 
+@app.get("/ui/mutation-timeline", tags=["UI"])
+def mutation_timeline_ui():
+    static_file = os.path.join(os.path.dirname(__file__), "static", "mutation_timeline.html")
+    if os.path.exists(static_file):
+        return FileResponse(static_file, media_type="text/html")
+    return JSONResponse(status_code=404, content={"message": "Mutation timeline UI not found."})
+
 # API v1 Router Registration
 app.include_router(auth_router, prefix="/api/v1")
 app.include_router(cases_router, prefix="/api/v1")
@@ -143,4 +151,5 @@ app.include_router(health_router, prefix="/api/v1")
 app.include_router(judicial_router, prefix="/api/v1")
 app.include_router(valuation_router, prefix="/api/v1")
 app.include_router(spatial_overlay_router, prefix="/api/v1")
+app.include_router(mutation_router, prefix="/api/v1")
 

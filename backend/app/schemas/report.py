@@ -239,9 +239,51 @@ class SectionValuationData(BaseModel):
     valuations: List[SectionValuationItem] = Field(default_factory=list)
     limitation_statement: str = VALUATION_REPORT_LIMITATION_STATEMENT
 
+MUTATION_REPORT_LIMITATION_STATEMENT = (
+    "STATUTORY MUTATION DILIGENCE LIMITATION STATEMENT:\n"
+    "1. Mutation records (दाखिल-खारिज) and their normalized statuses are fiscal and administrative evidence maintained for land revenue liability.\n"
+    "2. As settled by the Supreme Court of India in Suraj Bhan v. Financial Commissioner (2007) 6 SCC 186, mutation entries do NOT create, establish, extinguish, or determine legal title or ownership.\n"
+    "3. Sanctioned mutation approval or issuance of Shuddhi Patra does NOT independently certify that a property is legally clear, unencumbered, or in lawful possession.\n"
+    "4. The absence of a detected mutation proceeding does NOT imply clear title or non-existence of competing rights or transactions.\n"
+    "5. Adverse rejection orders (खारिज) reflect administrative or preliminary dispute grounds and require independent legal verification."
+)
+
+class SectionMutationItem(BaseModel):
+    case_id: str
+    case_number: str
+    filing_year: int
+    district: str
+    circle: str
+    mauza: str
+    khata_number: Optional[str] = None
+    khesra_number: Optional[str] = None
+    mutation_type: str
+    normalized_status: str
+    raw_source_status: Optional[str] = None
+    rejection_reason_code: Optional[str] = None
+    filing_date: Optional[str] = None
+    disposal_date: Optional[str] = None
+    applicant_names: List[str] = Field(default_factory=list)
+    seller_names: List[str] = Field(default_factory=list)
+    source_portal: str
+    source_authority: str
+    last_observation_date: Optional[str] = None
+    events_count: int = 0
+    has_rejection_order: bool = False
+    verification_status: str = "UNVERIFIED"
+
+class SectionMutationData(BaseModel):
+    is_reviewed: bool
+    total_cases_tracked: int
+    active_proceedings_count: int
+    rejection_orders_count: int
+    approved_shuddhi_patras_count: int
+    mutation_cases: List[SectionMutationItem] = Field(default_factory=list)
+    limitation_statement: str = MUTATION_REPORT_LIMITATION_STATEMENT
+
 class ReportDataStructure(BaseModel):
     """
-    Testable normalized data representation of all report sections including judicial risk and valuation.
+    Testable normalized data representation of all report sections including judicial risk, valuation, and mutation intelligence.
     """
     section_1_cover: Section1CoverData
     section_2_revenue: Section2RevenueData
@@ -253,5 +295,6 @@ class ReportDataStructure(BaseModel):
     section_8_findings_actions: List[Section8ActionItem]
     section_judicial_risk: Optional[SectionJudicialRiskData] = None
     section_valuation: Optional[SectionValuationData] = None
+    section_mutation: Optional[SectionMutationData] = None
     verification_url: str
     verification_token: str
