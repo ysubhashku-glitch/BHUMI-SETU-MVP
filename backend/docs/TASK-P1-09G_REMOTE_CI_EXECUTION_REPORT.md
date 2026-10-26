@@ -4,7 +4,7 @@
 **Classification:** DevOps / DevSecOps Remote Connection & CI Execution Audit  
 **Date:** October 26, 2026  
 **Status:** Canonical P1-09G Milestone Deliverable  
-**Final Verdict:** `BLOCKED — AUTHORIZED REMOTE REQUIRED`
+**Final Verdict:** `REMOTE CONNECTED — CI NOT EXECUTED`
 
 ---
 
@@ -12,26 +12,32 @@
 
 Milestone **TASK-P1-09F** safely initialized the Bhumi Setu Git repository on branch `main`, hardened dual-layer `.gitignore` rules, confirmed zero secret leakage, staged all 245 project assets, and recorded clean commits [`a5cb6d6`](file:///c:/Users/ysubh/OneDrive/Desktop/BHUMI%20SETU/) and [`8bbbedf`](file:///c:/Users/ysubh/OneDrive/Desktop/BHUMI%20SETU/).
 
-**TASK-P1-09G** was initiated to connect the local repository to an authorized GitHub remote and trigger the live staging integration pipeline on a Docker-capable GitHub-hosted runner.
+**TASK-P1-09G** was executed to connect the local repository to the authorized GitHub remote (`https://github.com/ysubhashku-glitch/BHUMI-SETU-MVP.git`) and trigger the live staging integration pipeline on a Docker-capable GitHub-hosted runner.
 
 ### Execution & Audit Findings:
 1. **Local Repository Integrity Verified:**
    - Repository root: `C:/Users/ysubh/OneDrive/Desktop/BHUMI SETU`
    - Active branch: `main`
    - Working tree: Clean (`nothing to commit, working tree clean`)
-   - Commits present: Initial commit `a5cb6d6d2e40e3c04b9ee03567520412b7df9145` and documentation commit `8bbbedf`.
+   - Commits present: Initial commit `a5cb6d6d2e40e3c04b9ee03567520412b7df9145`, documentation commit `8bbbedf`, and report commit `fca43af`.
 2. **Git History Security Audit:**
    - Full history scan confirmed that zero real `.env` files, zero SQLite database files (`bhumisetu.db`, `bhumisetu_local.db`, `test_bhumisetu.db`), zero `.venv` virtual environments, zero private keys/certificates, and zero uploaded documents exist in the Git tree.
    - The only environment file in Git history is `backend/.env.example`, which contains strictly placeholders.
-3. **Remote Configuration & Identity Request:**
-   - Prior to operator engagement, `git remote -v` reported zero configured remotes, and `ssh -T git@github.com` confirmed no SSH public key authentication was configured.
-   - The operator was prompted to provide the exact authorized GitHub repository URL.
-   - The input provided was `https://github.com/` (a base domain without the required `<owner>/<repository>` path).
-4. **Adherence to Non-Negotiable Constraints:**
-   - Per Non-Negotiable Constraint 2 ("Never guess the remote repository"), Non-Negotiable Constraint 3 ("Do not publish to an unverified repository"), and Rule 8, publication was halted to prevent accidental publication to an unintended namespace or malformed remote.
+3. **Authorized Remote Connection Established:**
+   - Authorized URL provided by operator: `https://github.com/ysubhashku-glitch/BHUMI-SETU-MVP.git`.
+   - `git ls-remote` executed successfully with code 0 and empty stdout, confirming that the repository is valid, accessible, and completely empty (zero divergence risk).
+   - Configured remote origin: `https://ysubhashku-glitch@github.com/ysubhashku-glitch/BHUMI-SETU-MVP.git`.
+4. **Push Attempt & GitHub Authorization Gate:**
+   - Execution of `git push -u origin main` reached GitHub's server using the operator's stored GitHub credentials for `ysubhashku-glitch`.
+   - GitHub's server rejected the push with:
+     ```
+     ! [remote rejected] main -> main (refusing to allow a Personal Access Token to create or update workflow .github/workflows/staging-integration.yml without workflow scope)
+     error: failed to push some refs to 'https://github.com/ysubhashku-glitch/BHUMI-SETU-MVP.git'
+     ```
+   - Rationale: GitHub's security policy requires Personal Access Tokens to possess the `workflow` permission in order to create or update workflow definitions under `.github/workflows/`. The existing token stored in Windows Credential Manager has repository write permissions but lacks the `workflow` scope.
 5. **Final Verdict:**
    - In accordance with the permitted verdict criteria, the milestone is formally recorded as:  
-     **`BLOCKED — AUTHORIZED REMOTE REQUIRED`**.
+     **`REMOTE CONNECTED — CI NOT EXECUTED`**.
 
 ---
 
@@ -146,48 +152,57 @@ All tests were verified locally in the prepared repository state:
 
 ## 8. Remaining Blockers & Exact Operator Action Required
 
-### Remaining Blockers:
-1. **Authorized GitHub Repository Remote:**  
-   The operator provided `https://github.com/` without specifying the target owner/organization and repository name.
-2. **Remote Authentication:**  
-   Neither GitHub CLI (`gh`) nor SSH public key authentication is configured on the local workstation.
-3. **Local Docker Absence:**  
-   Docker Desktop and WSL2 remain uninstalled locally; live staging validation requires either local Docker or GitHub Actions runner execution.
-
-### Exact Next Operator Action to Publish & Trigger CI:
-
-1. **Create or locate your target repository on GitHub**  
-   (e.g., `https://github.com/<your-username-or-org>/bhumi-setu.git`).
-2. **Add the remote origin to the local Git repository:**
-   ```powershell
-   git remote add origin https://github.com/<your-username-or-org>/bhumi-setu.git
+### Status & Remaining Blocker:
+1. **Remote Repository Successfully Configured:**  
+   `https://github.com/ysubhashku-glitch/BHUMI-SETU-MVP.git` is active, connected, and empty.
+2. **Push Authorization Blocker:**  
+   GitHub rejected the push of `.github/workflows/staging-integration.yml` because the stored Personal Access Token for user `ysubhashku-glitch` lacks the `workflow` scope:
    ```
-3. **Push the verified `main` branch:**
+   ! [remote rejected] main -> main (refusing to allow a Personal Access Token to create or update workflow .github/workflows/staging-integration.yml without workflow scope)
+   ```
+3. **Local Docker Absence:**  
+   Docker Desktop and WSL2 remain uninstalled locally; live staging validation relies on the GitHub Actions runner execution once pushed.
+
+### Exact Operator Action to Authorize Workflow Scope & Trigger CI:
+
+1. **Visit GitHub Personal Access Token Settings:**  
+   Navigate to [GitHub Tokens](https://github.com/settings/tokens).
+2. **Update or Generate Token:**  
+   - Select your active Personal Access Token for `ysubhashku-glitch` (or click **Generate new token (classic)**).
+   - Verify the following scopes are checked:
+     - [x] **`repo`** (Full control of private repositories)
+     - [x] **`workflow`** (Update GitHub Action workflows) 👈 **REQUIRED**
+   - Click **Generate token** / **Update token** and copy the resulting `ghp_...` token.
+3. **Update Windows Credential Manager:**  
+   Run the following command in PowerShell:
+   ```powershell
+   cmdkey /generic:git:https://ysubhashku-glitch@github.com /user:ysubhashku-glitch /pass:<PASTE_TOKEN_HERE>
+   ```
+4. **Push to Remote Origin:**  
    ```powershell
    git push -u origin main
    ```
-   *(Windows Git Credential Manager will prompt once in your browser for GitHub authorization).*
-4. **Inspect CI Execution on GitHub Actions:**  
-   Upon push, GitHub Actions will automatically launch the `staging-integration-validation` pipeline defined in `.github/workflows/staging-integration.yml`.
+   *(With `workflow` scope granted, GitHub will accept the push immediately and launch the 17-stage `staging-integration-validation` CI workflow).*
 
 ---
 
 ## 9. Deliverables Summary
 
-1. **Local Git Repository:** Verified on `main` at commits `a5cb6d6` and `8bbbedf` (clean working tree).
+1. **Local Git Repository:** Verified on `main` at commits `a5cb6d6`, `8bbbedf`, and `fca43af` (clean working tree).
 2. **Security Audit:** Zero secrets or runtime databases committed to Git.
-3. [`.github/workflows/staging-integration.yml`](file:///c:/Users/ysubh/OneDrive/Desktop/BHUMI%20SETU/.github/workflows/staging-integration.yml): 17-stage hardened CI pipeline ready for execution.
-4. [`backend/scripts/verify_persistence.py`](file:///c:/Users/ysubh/OneDrive/Desktop/BHUMI%20SETU/backend/scripts/verify_persistence.py): Database and storage persistence verification script.
-5. [`backend/docs/TASK-P1-09G_REMOTE_CI_EXECUTION_REPORT.md`](file:///c:/Users/ysubh/OneDrive/Desktop/BHUMI%20SETU/backend/docs/TASK-P1-09G_REMOTE_CI_EXECUTION_REPORT.md): Canonical milestone deliverable.
-6. [`bhumi-setu-reverse-engineering/14-mvp-implementation-plan.md`](file:///c:/Users/ysubh/OneDrive/Desktop/BHUMI%20SETU/bhumi-setu-reverse-engineering/14-mvp-implementation-plan.md): Updated with TASK-P1-09G completion entry.
+3. **Remote Origin:** Configured and validated: `https://ysubhashku-glitch@github.com/ysubhashku-glitch/BHUMI-SETU-MVP.git`.
+4. [`.github/workflows/staging-integration.yml`](file:///c:/Users/ysubh/OneDrive/Desktop/BHUMI%20SETU/.github/workflows/staging-integration.yml): 17-stage hardened CI pipeline ready for execution.
+5. [`backend/scripts/verify_persistence.py`](file:///c:/Users/ysubh/OneDrive/Desktop/BHUMI%20SETU/backend/scripts/verify_persistence.py): Database and storage persistence verification script.
+6. [`backend/docs/TASK-P1-09G_REMOTE_CI_EXECUTION_REPORT.md`](file:///c:/Users/ysubh/OneDrive/Desktop/BHUMI%20SETU/backend/docs/TASK-P1-09G_REMOTE_CI_EXECUTION_REPORT.md): Canonical milestone deliverable.
+7. [`bhumi-setu-reverse-engineering/14-mvp-implementation-plan.md`](file:///c:/Users/ysubh/OneDrive/Desktop/BHUMI%20SETU/bhumi-setu-reverse-engineering/14-mvp-implementation-plan.md): Updated with TASK-P1-09G completion entry.
 
 ---
 
 ## 10. Final Readiness Verdict
 
-### **Verdict:** `BLOCKED — AUTHORIZED REMOTE REQUIRED`
+### **Verdict:** `REMOTE CONNECTED — CI NOT EXECUTED`
 
 **Rationale:**  
-The local repository is securely initialized, free of secrets, and verified with 201 passing tests. The 17-stage CI workflow is fully implemented and audited. However, the remote repository URL provided was incomplete (`https://github.com/`), and no remote origin is configured. In strict adherence to Non-Negotiable Constraint 2 ("Never guess the remote repository"), the milestone is honestly reported as `BLOCKED — AUTHORIZED REMOTE REQUIRED`.
+The local repository is securely initialized, free of secrets, and verified with 201 passing tests. The authorized remote repository `https://github.com/ysubhashku-glitch/BHUMI-SETU-MVP.git` is connected and verified via `git ls-remote`. However, `git push` was rejected by GitHub because the stored Personal Access Token lacks the `workflow` scope required to create `.github/workflows/staging-integration.yml`. In strict accordance with the milestone protocol, the milestone is formally recorded as `REMOTE CONNECTED — CI NOT EXECUTED`.
 
 *(Note: Per Non-Negotiable Constraint 8, Phase P2-01 remains unstarted until the staging validation gate is satisfied).*
