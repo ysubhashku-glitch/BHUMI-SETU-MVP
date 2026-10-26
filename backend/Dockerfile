@@ -37,6 +37,7 @@ WORKDIR /app
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     PATH="/opt/venv/bin:$PATH" \
+    PYTHONPATH="/app" \
     PORT=8000
 
 # Install runtime shared libraries only (PostgreSQL client, GEOS geometry, OCR engines)

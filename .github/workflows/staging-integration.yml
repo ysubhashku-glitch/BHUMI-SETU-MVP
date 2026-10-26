@@ -205,7 +205,8 @@ jobs:
           docker compose -f docker-compose.staging.yml --env-file backend/.env run --rm \
             -e TEST_LIVE_STAGING=1 \
             -e STAGING_APP_URL="http://app:8000" \
-            app pytest tests/test_containerized_staging_integration.py -v
+            -e PYTHONPATH="/app" \
+            app python -m pytest tests/test_containerized_staging_integration.py -v
 
       # ------------------------------------------------------------------------
       # 14. Run End-to-End Staging Smoke Test
@@ -213,7 +214,8 @@ jobs:
       - name: Execute 18-Step Staging End-to-End Smoke Test
         run: |
           docker compose -f docker-compose.staging.yml --env-file backend/.env run --rm \
-            app pytest tests/test_staging_smoke.py -v
+            -e PYTHONPATH="/app" \
+            app python -m pytest tests/test_staging_smoke.py -v
 
       # ------------------------------------------------------------------------
       # 15. Verify Real Data Persistence Across Container Restart
