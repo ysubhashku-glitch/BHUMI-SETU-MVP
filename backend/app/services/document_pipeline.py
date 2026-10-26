@@ -98,7 +98,14 @@ class DocumentPipelineService:
         db.commit()
 
         # Step 3: OCR Processing
-        ocr_provider = get_ocr_provider()
+        is_kaithi = False
+        if doc.document_metadata:
+            if doc.document_metadata.get("script") in ("KAITHI", "kai") or doc.document_metadata.get("ocr_provider") in ("kaithi", "kai"):
+                is_kaithi = True
+        if not is_kaithi and ("kaithi" in doc.original_filename.lower() or "cs_khatiyan" in doc.original_filename.lower()):
+            is_kaithi = True
+
+        ocr_provider = get_ocr_provider("kaithi" if is_kaithi else None)
         try:
             ocr_res: OCRResult = ocr_provider.process(
                 document_content=content,
@@ -106,7 +113,9 @@ class DocumentPipelineService:
                 metadata={
                     "document_category": doc.document_category,
                     "original_filename": doc.original_filename,
-                    "injected_text": doc.document_metadata.get("injected_text") if doc.document_metadata else None
+                    "injected_text": doc.document_metadata.get("injected_text") if doc.document_metadata else None,
+                    "injected_kaithi_text": doc.document_metadata.get("injected_kaithi_text") if doc.document_metadata else None,
+                    "script": "KAITHI" if is_kaithi else None
                 }
             )
             version.ocr_engine = ocr_res.ocr_engine

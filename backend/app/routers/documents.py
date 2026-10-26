@@ -48,6 +48,13 @@ from app.services.claim_generator_service import ClaimGeneratorService
 from app.services.consistency_service import evaluate_claims_consistency
 from app.services.document_classifier import DocumentClassifier
 from app.services.document_cross_reference_service import DocumentCrossReferenceService
+from app.services.kaithi.schemas import (
+    KaithiRecognitionResult,
+    KaithiReviewRequest,
+    KaithiReviewResponse,
+    EPISTEMIC_KAITHI_DISCLAIMER
+)
+from app.services.kaithi.engine import get_kaithi_engine
 from app.models.base import utc_now
 
 router = APIRouter(tags=["Documents"])
@@ -612,4 +619,157 @@ def cross_reference_document(
         org_id=current_user.org_id,
         db=db
     )
+
+
+@router.post("/documents/{document_id}/kaithi-ocr", response_model=KaithiRecognitionResult)
+def process_document_kaithi_ocr(
+    document_id: uuid.UUID,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Executes specialized Kaithi Historical Vision recognition on document image.
+    Generates text lines, bounding boxes, Devanagari transliteration, and confidence.
+    """
+    document = db.query(Document).filter(Document.document_id == document_id).first()
+    if not document:
+        raise EntityNotFoundError("Document", document_id)
+    if document.org_id and document.org_id != current_user.org_id:
+        raise CrossTenantAccessError()
+
+    storage = get_document_storage()
+    content = storage.get(document.storage_uri)
+
+    engine = get_kaithi_engine()
+    metadata = {
+        "document_category": document.document_category,
+        "original_filename": document.original_filename,
+        "injected_kaithi_text": document.document_metadata.get("injected_kaithi_text") if document.document_metadata else None,
+        "injected_text": document.document_metadata.get("injected_text") if document.document_metadata else None
+    }
+
+    result = engine.recognize_document(
+        image_bytes=content,
+        document_id=str(document.document_id),
+        metadata=metadata
+    )
+
+    if document.document_metadata is None:
+        document.document_metadata = {}
+    document.document_metadata["kaithi_ocr_result"] = result.model_dump()
+    db.commit()
+
+    return result
+
+
+@router.get("/documents/{document_id}/kaithi-result", response_model=KaithiRecognitionResult)
+def get_document_kaithi_result(
+    document_id: uuid.UUID,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Retrieves latest Kaithi recognition result for document.
+    """
+    document = db.query(Document).filter(Document.document_id == document_id).first()
+    if not document:
+        raise EntityNotFoundError("Document", document_id)
+    if document.org_id and document.org_id != current_user.org_id:
+        raise CrossTenantAccessError()
+
+    if document.document_metadata and "kaithi_ocr_result" in document.document_metadata:
+        return KaithiRecognitionResult(**document.document_metadata["kaithi_ocr_result"])
+
+    storage = get_document_storage()
+    content = storage.get(document.storage_uri)
+    engine = get_kaithi_engine()
+    metadata = {
+        "document_category": document.document_category,
+        "original_filename": document.original_filename,
+        "injected_kaithi_text": document.document_metadata.get("injected_kaithi_text") if document.document_metadata else None,
+        "injected_text": document.document_metadata.get("injected_text") if document.document_metadata else None
+    }
+    result = engine.recognize_document(
+        image_bytes=content,
+        document_id=str(document.document_id),
+        metadata=metadata
+    )
+    if document.document_metadata is None:
+        document.document_metadata = {}
+    document.document_metadata["kaithi_ocr_result"] = result.model_dump()
+    db.commit()
+    return result
+
+
+@router.post("/documents/{document_id}/kaithi-review", response_model=KaithiReviewResponse)
+def submit_kaithi_human_review(
+    document_id: uuid.UUID,
+    review_req: KaithiReviewRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Records human-in-the-loop review corrections for recognized Kaithi text.
+    Preserves immutable raw model output and logs full audit trail.
+    """
+    document = db.query(Document).filter(Document.document_id == document_id).first()
+    if not document:
+        raise EntityNotFoundError("Document", document_id)
+    if document.org_id and document.org_id != current_user.org_id:
+        raise CrossTenantAccessError()
+
+    latest_version = db.query(DocumentVersion).filter(
+        DocumentVersion.document_id == document_id
+    ).order_by(DocumentVersion.version_number.desc()).first()
+
+    now = utc_now()
+    if document.document_metadata is None:
+        document.document_metadata = {}
+
+    if "kaithi_review_audit" not in document.document_metadata:
+        document.document_metadata["kaithi_review_audit"] = []
+
+    summary_entries = []
+    for c in review_req.corrections:
+        audit_entry = {
+            "line_number": c.line_number,
+            "original_raw_text": c.original_raw_text,
+            "corrected_text": c.corrected_text,
+            "review_notes": c.review_notes,
+            "reviewed_by_user_id": str(current_user.user_id),
+            "reviewed_at": now.isoformat()
+        }
+        document.document_metadata["kaithi_review_audit"].append(audit_entry)
+        summary_entries.append(audit_entry)
+
+    if "kaithi_ocr_result" in document.document_metadata:
+        cached = document.document_metadata["kaithi_ocr_result"]
+        for p in cached.get("pages", []):
+            for line in p.get("lines", []):
+                for c in review_req.corrections:
+                    if line.get("line_number") == c.line_number:
+                        line["reviewed_corrected_text"] = c.corrected_text
+                        line["review_notes"] = c.review_notes
+                        line["review_required"] = False
+        document.document_metadata["kaithi_ocr_result"] = cached
+
+    page = db.query(DocumentPage).filter(DocumentPage.document_id == document_id).first()
+    if page:
+        page.page_metadata = page.page_metadata or {}
+        page.page_metadata["last_human_reviewed_at"] = now.isoformat()
+        page.page_metadata["reviewed_by"] = str(current_user.user_id)
+
+    db.commit()
+
+    return KaithiReviewResponse(
+        document_id=str(document.document_id),
+        version_id=str(latest_version.version_id) if latest_version else "v1",
+        status="REVIEWED",
+        total_corrections=len(review_req.corrections),
+        reviewed_at=now,
+        reviewed_by_user_id=str(current_user.user_id),
+        review_summary=summary_entries,
+        epistemic_notice=EPISTEMIC_KAITHI_DISCLAIMER
+    )
+
 

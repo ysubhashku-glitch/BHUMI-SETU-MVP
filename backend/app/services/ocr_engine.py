@@ -324,13 +324,92 @@ class DemoOCRProvider(OCRProvider):
         )
 
 
+class KaithiOCRProvider(OCRProvider):
+    """
+    Historical Kaithi Script Vision OCR provider.
+    Specialized for pre-digitization Bihar Cadastral Survey (CS) Khatiyans,
+    zamindari deeds, and court documents in Kaithi cursive script.
+    """
+    ENGINE_NAME = "KAITHI_VISION_ENGINE"
+    VERSION = "1.1.0-bhumisetu"
+
+    def __init__(self, engine_type: Optional[str] = None):
+        from app.services.kaithi.engine import get_kaithi_engine
+        self.kaithi_engine = get_kaithi_engine(engine_type)
+
+    def process(
+        self,
+        document_content: bytes,
+        mime_type: str,
+        languages: List[str] = ["kai", "hin", "eng"],
+        metadata: Optional[Dict[str, Any]] = None
+    ) -> OCRResult:
+        start_time = time.time()
+        metadata = metadata or {}
+        
+        # Execute Kaithi recognition pipeline
+        kaithi_res = self.kaithi_engine.recognize_document(
+            image_bytes=document_content,
+            metadata=metadata
+        )
+
+        ocr_pages: List[OCRPageResult] = []
+        for p in kaithi_res.pages:
+            spans: List[OCRSpanResult] = []
+            char_offset = 0
+            
+            for line in p.lines:
+                bbox = OCRBoundingBox(
+                    x_min=line.bbox.x_min,
+                    y_min=line.bbox.y_min,
+                    x_max=line.bbox.x_max,
+                    y_max=line.bbox.y_max
+                )
+                
+                # Primary text is transliterated Devanagari for parser compatibility
+                line_text = line.devanagari_text
+                spans.append(
+                    OCRSpanResult(
+                        text=line_text,
+                        bbox=bbox,
+                        confidence=line.confidence,
+                        char_start=char_offset,
+                        char_end=char_offset + len(line_text),
+                        language="kai+hin"
+                    )
+                )
+                char_offset += len(line_text) + 1
+
+            ocr_pages.append(
+                OCRPageResult(
+                    page_number=p.page_number,
+                    full_text=p.full_devanagari_text,
+                    confidence=p.page_confidence,
+                    language="kai+hin",
+                    spans=spans,
+                    ocr_engine=self.ENGINE_NAME,
+                    ocr_version=self.VERSION
+                )
+            )
+
+        return OCRResult(
+            pages=ocr_pages,
+            ocr_engine=self.ENGINE_NAME,
+            ocr_version=self.VERSION,
+            processing_duration_sec=time.time() - start_time
+        )
+
+
 def get_ocr_provider(provider_type: Optional[str] = None) -> OCRProvider:
     """
     Factory for OCRProvider.
-    Uses Tesseract if requested and available; defaults to DemoOCRProvider.
+    Supports 'kaithi', 'tesseract', and defaults to DemoOCRProvider.
     """
+    if provider_type in ("kaithi", "kai"):
+        return KaithiOCRProvider()
     if provider_type == "tesseract":
         tess = TesseractOCRProvider()
         if tess.is_available:
             return tess
     return DemoOCRProvider()
+

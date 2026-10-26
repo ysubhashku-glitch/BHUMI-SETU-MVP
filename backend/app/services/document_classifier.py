@@ -62,7 +62,8 @@ class DocumentClassifier:
         ],
         DocumentCategory.KHATIYAN: [
             r"khatiyan", r"खतियान", r"raiyat\s*name", r"रैयतदार", r"cs\s*khatiyan", r"rs\s*khatiyan",
-            r"thana\s*no", r"annual\s*rent", r"dhani\s*[1-3]", r"lagan", r"रैयत\s*का\s*नाम", r"किस्म\s*जमीन"
+            r"thana\s*no", r"annual\s*rent", r"dhani\s*[1-3]", r"lagan", r"रैयत\s*का\s*नाम", r"किस्म\s*जमीन",
+            r"kaithi", r"कैथी", r"कथी", r"cadastral\s*survey", r"[\U00011080-\U000110CF]"
         ],
         DocumentCategory.JAMABANDI: [
             r"jamabandi", r"जमाबंदी", r"register\s*ii", r"पंजी\s*ii", r"halka", r"halka\s*no",

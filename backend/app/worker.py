@@ -102,21 +102,26 @@ def process_document_ocr_task_logic(
             return {"status": "SKIPPED", "reason": "ALREADY_COMPLETED", "version_id": version_id}
 
         from app.services.document_pipeline import DocumentPipelineService
-        result = DocumentPipelineService.execute_pipeline(
+        from app.models.evidence import ExtractedField
+        from app.models.claim import CandidateClaim
+
+        processed_version = DocumentPipelineService.execute_pipeline(
             document_id=doc_uuid,
             version_id=ver_uuid,
-            case_id=case_uuid,
-            user_id=user_uuid,
-            db=db
+            db=db,
+            case_id=case_uuid
         )
+
+        field_count = db.query(ExtractedField).filter(ExtractedField.version_id == ver_uuid).count()
+        claim_count = db.query(CandidateClaim).filter(CandidateClaim.version_id == ver_uuid).count()
 
         logger.info(f"Successfully finished OCR task for document_id={document_id}")
         return {
             "status": "SUCCESS",
             "document_id": document_id,
             "version_id": version_id,
-            "extracted_fields_count": len(result.get("extracted_fields", [])),
-            "claims_count": len(result.get("claims", []))
+            "extracted_fields_count": field_count,
+            "claims_count": claim_count
         }
     except Exception as exc:
         if close_db:
