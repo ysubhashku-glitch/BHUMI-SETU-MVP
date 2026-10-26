@@ -87,8 +87,9 @@ def validate_upload_security(
     if detected_mime not in ALLOWED_MIME_TYPES:
         raise SecurityValidationException(f"Unsupported MIME type: {detected_mime}")
 
-    # Sanitize filename
-    sanitized_filename = os.path.basename(declared_filename).replace("..", "").strip() or "document"
+    # Sanitize filename cross-platform (handles both Windows \ and POSIX / separators)
+    normalized_name = declared_filename.replace("\\", "/")
+    sanitized_filename = os.path.basename(normalized_name).replace("..", "").replace("/", "").replace("\\", "").strip() or "document"
     return detected_mime, sanitized_filename, file_size
 
 
