@@ -3,6 +3,7 @@ from datetime import datetime, date, timezone
 from enum import Enum
 import sqlalchemy as sa
 from sqlalchemy.orm import relationship, synonym
+from sqlalchemy.ext.hybrid import hybrid_property
 from app.database import Base
 from app.models.base import GUID, JSONCompatible, utc_now
 
@@ -127,6 +128,7 @@ class MutationCase(Base):
     khata_number = sa.Column(sa.String(32), nullable=False)
     plot_khesra_number = sa.Column(sa.String(32), nullable=False, index=True)
     transferred_area_acres = sa.Column(sa.Numeric(10, 4), nullable=True)
+    jamabandi_number = sa.Column(sa.String(64), nullable=True)
 
     # Party Particulars
     applicant_name = sa.Column(sa.String(256), nullable=False)
@@ -137,9 +139,10 @@ class MutationCase(Base):
     # Supporting Registered Transaction
     deed_number = sa.Column(sa.String(64), nullable=True, index=True)
     deed_date = sa.Column(sa.Date, nullable=True)
+    deed_registered_office = sa.Column(sa.String(128), nullable=True)
 
     # Lifecycle State
-    mutation_type = sa.Column(sa.String(64), nullable=False, default=MutationType.SALE_DEED)
+    _mutation_type = sa.Column("mutation_type", sa.String(64), nullable=False, default=MutationType.SALE_DEED)
     current_status = sa.Column(sa.String(32), nullable=False, default=MutationStatus.RECEIVED, index=True)
     raw_source_status = sa.Column(sa.String(128), nullable=False) # Original Hindi/English text from portal
 
@@ -151,8 +154,11 @@ class MutationCase(Base):
 
     # Provenance and Audit
     source_authority = sa.Column(sa.String(128), nullable=False, default="BIHAR_BHUMI_DORLR")
-    verification_status = sa.Column(sa.String(32), nullable=False, default=MutationVerificationStatus.UNVERIFIED)
+    source_portal = sa.Column(sa.String(64), nullable=True)
+    _verification_status = sa.Column("verification_status", sa.String(32), nullable=False, default=MutationVerificationStatus.UNVERIFIED)
     provenance_metadata = sa.Column(JSONCompatible, nullable=False, default=dict)
+    last_source_observation = sa.Column(sa.DateTime(timezone=True), nullable=True)
+    notes = sa.Column(sa.Text, nullable=True)
 
     created_at = sa.Column(sa.DateTime(timezone=True), default=utc_now, nullable=False)
     updated_at = sa.Column(sa.DateTime(timezone=True), default=utc_now, onupdate=utc_now, nullable=False)
@@ -161,6 +167,97 @@ class MutationCase(Base):
     circle = synonym("anchal")
     resolutions = synonym("entity_resolutions")
     khesra_number = synonym("plot_khesra_number")
+    mutation_case_id = synonym("mutation_id")
+    rejection_reason_code = synonym("rejection_code")
+    rejection_reason_details = synonym("rejection_reason")
+
+    @hybrid_property
+    def normalized_status(self):
+        try:
+            return MutationStatus(self.current_status)
+        except Exception:
+            return self.current_status
+
+    @normalized_status.setter
+    def normalized_status(self, val):
+        if hasattr(val, "value"):
+            self.current_status = val.value
+        else:
+            self.current_status = str(val) if val is not None else None
+
+    @normalized_status.expression
+    def normalized_status(cls):
+        return cls.current_status
+
+    @hybrid_property
+    def mutation_type(self):
+        try:
+            return MutationType(self._mutation_type)
+        except Exception:
+            return self._mutation_type
+
+    @mutation_type.setter
+    def mutation_type(self, val):
+        if hasattr(val, "value"):
+            self._mutation_type = val.value
+        else:
+            self._mutation_type = str(val) if val is not None else "SALE_DEED"
+
+    @mutation_type.expression
+    def mutation_type(cls):
+        return cls._mutation_type
+
+    @hybrid_property
+    def verification_status(self):
+        try:
+            return MutationVerificationStatus(self._verification_status)
+        except Exception:
+            return self._verification_status
+
+    @verification_status.setter
+    def verification_status(self, val):
+        if hasattr(val, "value"):
+            self._verification_status = val.value
+        else:
+            self._verification_status = str(val) if val is not None else "UNVERIFIED"
+
+    @verification_status.expression
+    def verification_status(cls):
+        return cls._verification_status
+
+    @property
+    def applicant_names(self):
+        if hasattr(self, "_applicant_names_cache") and self._applicant_names_cache:
+            return self._applicant_names_cache
+        return [self.applicant_name] if self.applicant_name else []
+
+    @applicant_names.setter
+    def applicant_names(self, val):
+        if isinstance(val, list):
+            self._applicant_names_cache = val
+            self.applicant_name = val[0] if val else "Applicant"
+        elif isinstance(val, str):
+            self._applicant_names_cache = [val]
+            self.applicant_name = val
+        else:
+            self._applicant_names_cache = []
+            self.applicant_name = "Applicant"
+
+    @property
+    def buyer_names(self):
+        return self.buyer_parties or []
+
+    @buyer_names.setter
+    def buyer_names(self, val):
+        self.buyer_parties = val or []
+
+    @property
+    def seller_names(self):
+        return self.seller_parties or []
+
+    @seller_names.setter
+    def seller_names(self, val):
+        self.seller_parties = val or []
 
     # Relationships
     organization = relationship("Organization")
@@ -173,6 +270,48 @@ class MutationCase(Base):
     def __init__(self, **kwargs):
         if "khesra_number" in kwargs and "plot_khesra_number" not in kwargs:
             kwargs["plot_khesra_number"] = kwargs.pop("khesra_number")
+        if "circle" in kwargs and "anchal" not in kwargs:
+            kwargs["anchal"] = kwargs.pop("circle")
+        if "mutation_case_id" in kwargs and "mutation_id" not in kwargs:
+            kwargs["mutation_id"] = kwargs.pop("mutation_case_id")
+
+        if "normalized_status" in kwargs:
+            val = kwargs.pop("normalized_status")
+            kwargs["current_status"] = val.value if hasattr(val, "value") else str(val)
+        if "current_status" in kwargs and hasattr(kwargs["current_status"], "value"):
+            kwargs["current_status"] = kwargs["current_status"].value
+        if "raw_source_status" not in kwargs or not kwargs["raw_source_status"]:
+            kwargs["raw_source_status"] = kwargs.get("current_status", "RECEIVED")
+
+        if "mutation_type" in kwargs and hasattr(kwargs["mutation_type"], "value"):
+            kwargs["_mutation_type"] = kwargs.pop("mutation_type").value
+        elif "mutation_type" in kwargs:
+            kwargs["_mutation_type"] = kwargs.pop("mutation_type")
+
+        if "verification_status" in kwargs and hasattr(kwargs["verification_status"], "value"):
+            kwargs["_verification_status"] = kwargs.pop("verification_status").value
+        elif "verification_status" in kwargs:
+            kwargs["_verification_status"] = kwargs.pop("verification_status")
+
+        app_names = kwargs.pop("applicant_names", None)
+        if app_names:
+            if isinstance(app_names, list) and app_names:
+                kwargs["applicant_name"] = app_names[0]
+            elif isinstance(app_names, str):
+                kwargs["applicant_name"] = app_names
+        if "applicant_name" not in kwargs or not kwargs["applicant_name"]:
+            kwargs["applicant_name"] = "Applicant"
+
+        if "buyer_names" in kwargs and "buyer_parties" not in kwargs:
+            kwargs["buyer_parties"] = kwargs.pop("buyer_names") or []
+        if "seller_names" in kwargs and "seller_parties" not in kwargs:
+            kwargs["seller_parties"] = kwargs.pop("seller_names") or []
+
+        if "rejection_reason_code" in kwargs and "rejection_code" not in kwargs:
+            kwargs["rejection_code"] = kwargs.pop("rejection_reason_code")
+        if "rejection_reason_details" in kwargs and "rejection_reason" not in kwargs:
+            kwargs["rejection_reason"] = kwargs.pop("rejection_reason_details")
+
         if "filing_year" in kwargs:
             fy = kwargs["filing_year"]
             if "financial_year" not in kwargs:
@@ -180,7 +319,10 @@ class MutationCase(Base):
                     kwargs["financial_year"] = f"{int(fy)}-{int(fy)+1}"
                 except Exception:
                     kwargs["financial_year"] = str(fy)
+
         super().__init__(**kwargs)
+        if app_names:
+            self._applicant_names_cache = app_names if isinstance(app_names, list) else [app_names]
 
 
 
@@ -192,24 +334,72 @@ class MutationEvent(Base):
 
     event_id = sa.Column(GUID, primary_key=True, default=uuid.uuid4)
     mutation_id = sa.Column(GUID, sa.ForeignKey("mutation_cases.mutation_id", ondelete="CASCADE"), nullable=False, index=True)
-    org_id = sa.Column(GUID, sa.ForeignKey("organizations.org_id", ondelete="CASCADE"), nullable=False, index=True)
+    org_id = sa.Column(GUID, sa.ForeignKey("organizations.org_id", ondelete="CASCADE"), nullable=True, index=True)
 
     event_type = sa.Column(sa.String(64), nullable=False, index=True)
+    source_event_id = sa.Column(sa.String(128), nullable=True)
     event_date = sa.Column(sa.Date, nullable=True)
     observed_at = sa.Column(sa.DateTime(timezone=True), default=utc_now, nullable=False)
+    ingested_timestamp = sa.Column(sa.DateTime(timezone=True), default=utc_now, nullable=True)
 
     source_authority = sa.Column(sa.String(128), nullable=False)
     source_payload = sa.Column(JSONCompatible, nullable=False, default=dict)
+    extracted_fields = sa.Column(JSONCompatible, nullable=False, default=dict)
     payload_hash = sa.Column(sa.String(64), nullable=False) # SHA-256 for cryptographic tamper evidence
 
-    event_description = sa.Column(sa.Text, nullable=False)
+    event_description = sa.Column(sa.Text, nullable=False, default="")
     action_taken_by = sa.Column(sa.String(128), nullable=True) # e.g. "CIRCLE_OFFICER_DANAPUR"
     source_document_ref = sa.Column(sa.String(256), nullable=True)
+    remarks = sa.Column(sa.Text, nullable=True)
+    provenance_type = sa.Column(sa.String(64), nullable=False, default="OFFICIAL_GOVERNMENT_PORTAL")
 
     created_at = sa.Column(sa.DateTime(timezone=True), default=utc_now, nullable=False)
 
+    # Synonyms & Hybrids
+    mutation_event_id = synonym("event_id")
+    mutation_case_id = synonym("mutation_id")
+    raw_payload = synonym("source_payload")
+    source_document_reference = synonym("source_document_ref")
+    action_taken = synonym("event_description")
+
+    @property
+    def reported_event_timestamp(self):
+        if self.event_date:
+            return datetime.combine(self.event_date, datetime.min.time(), tzinfo=timezone.utc)
+        return self.observed_at
+
+    @reported_event_timestamp.setter
+    def reported_event_timestamp(self, val):
+        if val is not None:
+            if hasattr(val, "date"):
+                self.event_date = val.date()
+            self.observed_at = val
+
     # Relationships
     mutation_case = relationship("MutationCase", back_populates="events")
+
+    def __init__(self, **kwargs):
+        if "mutation_case_id" in kwargs and "mutation_id" not in kwargs:
+            kwargs["mutation_id"] = kwargs.pop("mutation_case_id")
+        if "mutation_event_id" in kwargs and "event_id" not in kwargs:
+            kwargs["event_id"] = kwargs.pop("mutation_event_id")
+        if "raw_payload" in kwargs and "source_payload" not in kwargs:
+            kwargs["source_payload"] = kwargs.pop("raw_payload")
+        if "source_document_reference" in kwargs and "source_document_ref" not in kwargs:
+            kwargs["source_document_ref"] = kwargs.pop("source_document_reference")
+        if "action_taken" in kwargs and "event_description" not in kwargs:
+            kwargs["event_description"] = kwargs.pop("action_taken")
+        if "event_description" not in kwargs or not kwargs["event_description"]:
+            kwargs["event_description"] = kwargs.get("action_taken", "MUTATION_EVENT")
+        if "reported_event_timestamp" in kwargs:
+            val = kwargs.pop("reported_event_timestamp")
+            if val is not None:
+                if hasattr(val, "date"):
+                    kwargs["event_date"] = val.date()
+                kwargs["observed_at"] = val
+        if "event_type" in kwargs and hasattr(kwargs["event_type"], "value"):
+            kwargs["event_type"] = kwargs["event_type"].value
+        super().__init__(**kwargs)
 
 
 class MutationDocument(Base):

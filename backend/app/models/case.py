@@ -80,7 +80,12 @@ class Case(Base):
             self.created_by_user_id = cb_id
         if "primary_client_party_id" not in kwargs or not kwargs["primary_client_party_id"]:
             kwargs["primary_client_party_id"] = uuid.uuid4()
+        extra_attrs = ["title", "description", "assigned_reviewer_id"]
+        extras = {k: kwargs.pop(k) for k in extra_attrs if k in kwargs}
         super().__init__(**kwargs)
+        for k, v in extras.items():
+            setattr(self, k, v)
+
 
 class CaseParcel(Base):
     __tablename__ = "case_parcels"
