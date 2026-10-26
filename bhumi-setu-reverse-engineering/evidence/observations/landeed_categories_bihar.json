@@ -1,0 +1,60 @@
+{
+  "source_url": "https://bedrock.landeed.com/api/home/categories?state=bihar",
+  "method": "GET",
+  "status": 200,
+  "server": "uvicorn",
+  "headers": {
+    "x-terra-version": "TERRA4.0",
+    "access-control-allow-credentials": "true",
+    "access-control-allow-origin": "https://web.landeed.com",
+    "content-type": "application/json"
+  },
+  "data": {
+    "categories": [
+      {
+        "text": "Know Before You Buy",
+        "description": "Title, ownership, red flags — the ground truth on any property before you pay.",
+        "prompts": [
+          "Check this property's ownership history and red flags",
+          "Trace every past owner of this property",
+          "Any liens, disputes, or court cases on this property?",
+          "Is the seller actually the legal owner?",
+          "What should I check before I pay the advance?"
+        ]
+      },
+      {
+        "text": "Explore the Map",
+        "description": "Search any property, drop a pin, see what the records say.",
+        "prompts": [
+          "Show me everything registered around this pin",
+          "What's the transaction history on this street?",
+          "Show recent sales near this location",
+          "Guidance value versus market rate here?",
+          "Track this property and tell me if anything changes"
+        ]
+      },
+      {
+        "text": "Get Certified Proof",
+        "description": "EC, sale deed, RoR, tax record — pulled, certified, and read against the source. Confirms loans, ownership, and transfers.",
+        "prompts": [
+          "Get the EC — any loans, mortgages, or claims on this property?",
+          "Pull the registered sale deed — who owns it, and how did they get it?",
+          "Get the RoR / Pahani / 7-12 — is ownership recorded with the revenue dept?",
+          "Are the property taxes clear? Get the latest receipt.",
+          "I need documents for a bank / registration — which should I pull?"
+        ]
+      },
+      {
+        "text": "Ancestral Records",
+        "description": "Trace a property's full ownership lineage across generations. See every transfer, owner, and title change.",
+        "prompts": [
+          "Trace this property's full ownership history",
+          "Show me the chain of title across all past owners",
+          "Are there any breaks or gaps in the ownership lineage?",
+          "Who originally owned this land and when?",
+          "Flag any disputed or unclear transfers in the record"
+        ]
+      }
+    ]
+  }
+}

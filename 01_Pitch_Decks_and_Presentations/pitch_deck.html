@@ -1,0 +1,1216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bhumi Setu — Investor Pitch Deck</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  @page {
+    size: 297mm 167.06mm; /* Exact 16:9 widescreen landscape */
+    margin: 0;
+  }
+
+  *, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  body {
+    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background-color: #0B0F17;
+    color: #E2E8F0;
+    -webkit-font-smoothing: antialiased;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .slide {
+    width: 297mm;
+    height: 167.06mm;
+    page-break-after: always;
+    page-break-inside: avoid;
+    position: relative;
+    overflow: hidden;
+    background: radial-gradient(circle at 85% 15%, rgba(30, 58, 138, 0.25) 0%, rgba(11, 15, 23, 1) 70%),
+                radial-gradient(circle at 10% 90%, rgba(13, 148, 136, 0.15) 0%, rgba(11, 15, 23, 1) 60%),
+                #0B0F17;
+    padding: 18mm 22mm;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+
+  .slide-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    padding-bottom: 10px;
+    margin-bottom: 14px;
+  }
+
+  .slide-tag {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: #10B981;
+    background: rgba(16, 185, 129, 0.12);
+    padding: 4px 10px;
+    border-radius: 20px;
+    display: inline-block;
+    margin-bottom: 4px;
+    border: 1px solid rgba(16, 185, 129, 0.25);
+  }
+
+  .slide-title {
+    font-size: 26px;
+    font-weight: 800;
+    color: #FFFFFF;
+    letter-spacing: -0.5px;
+    line-height: 1.2;
+  }
+
+  .slide-subtitle {
+    font-size: 13px;
+    color: #94A3B8;
+    margin-top: 3px;
+  }
+
+  .brand-watermark {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .brand-logo-icon {
+    width: 24px;
+    height: 24px;
+    background: linear-gradient(135deg, #10B981, #0284C7);
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 900;
+    font-size: 14px;
+  }
+
+  .brand-name {
+    font-size: 13px;
+    font-weight: 800;
+    letter-spacing: 1px;
+    color: #F8FAFC;
+  }
+
+  .slide-body {
+    flex: 1;
+    display: flex;
+    gap: 18px;
+    position: relative;
+    z-index: 2;
+  }
+
+  .slide-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 8px;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    font-size: 10px;
+    color: #64748B;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  /* Utility Grid & Card Layouts */
+  .grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    width: 100%;
+  }
+
+  .grid-3 {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 14px;
+    width: 100%;
+  }
+
+  .grid-4 {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    width: 100%;
+  }
+
+  .grid-6 {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(2, 1fr);
+    gap: 12px;
+    width: 100%;
+  }
+
+  .card {
+    background: rgba(18, 24, 38, 0.75);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    padding: 16px;
+    backdrop-filter: blur(10px);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+
+  .card-highlight {
+    background: linear-gradient(145deg, rgba(16, 185, 129, 0.08), rgba(2, 132, 199, 0.08));
+    border: 1px solid rgba(16, 185, 129, 0.35);
+  }
+
+  .card-danger {
+    background: rgba(239, 68, 68, 0.06);
+    border: 1px solid rgba(239, 68, 68, 0.25);
+  }
+
+  .metric-box {
+    text-align: center;
+    padding: 14px 10px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 10px;
+  }
+
+  .metric-val {
+    font-size: 28px;
+    font-weight: 800;
+    color: #F8FAFC;
+    letter-spacing: -0.5px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .metric-val.emerald { color: #10B981; }
+  .metric-val.cyan { color: #06B6D4; }
+  .metric-val.amber { color: #F59E0B; }
+  .metric-val.rose { color: #F43F5E; }
+
+  .metric-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: #94A3B8;
+    margin-top: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .feature-list {
+    list-style: none;
+    margin-top: 8px;
+  }
+
+  .feature-list li {
+    font-size: 12px;
+    color: #CBD5E1;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    line-height: 1.4;
+  }
+
+  .feature-list li::before {
+    content: "✓";
+    color: #10B981;
+    font-weight: bold;
+    flex-shrink: 0;
+  }
+
+  .feature-list.danger li::before {
+    content: "⚠";
+    color: #EF4444;
+  }
+
+  /* Table styling */
+  .deck-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 11px;
+    margin-top: 6px;
+  }
+
+  .deck-table th {
+    background: rgba(255, 255, 255, 0.05);
+    padding: 8px 10px;
+    text-align: left;
+    color: #94A3B8;
+    font-weight: 700;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .deck-table td {
+    padding: 8px 10px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    color: #E2E8F0;
+  }
+
+  .deck-table tr:hover {
+    background: rgba(255, 255, 255, 0.02);
+  }
+
+  .badge {
+    padding: 2px 7px;
+    border-radius: 12px;
+    font-size: 10px;
+    font-weight: 700;
+    display: inline-block;
+  }
+
+  .badge-success { background: rgba(16, 185, 129, 0.2); color: #34D399; }
+  .badge-warning { background: rgba(245, 158, 11, 0.2); color: #FBBF24; }
+  .badge-danger { background: rgba(239, 68, 68, 0.2); color: #F87171; }
+  .badge-info { background: rgba(59, 130, 246, 0.2); color: #60A5FA; }
+
+  /* Title Slide Specifics */
+  .title-slide-content {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-start;
+    height: 100%;
+    max-width: 80%;
+  }
+
+  .big-tag {
+    font-size: 13px;
+    font-weight: 800;
+    letter-spacing: 3px;
+    color: #10B981;
+    background: rgba(16, 185, 129, 0.1);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+    padding: 6px 14px;
+    border-radius: 30px;
+    margin-bottom: 18px;
+    display: inline-block;
+  }
+
+  .main-hero-title {
+    font-size: 48px;
+    font-weight: 900;
+    color: #FFFFFF;
+    letter-spacing: -1.5px;
+    line-height: 1.1;
+    margin-bottom: 14px;
+  }
+
+  .gradient-text {
+    background: linear-gradient(135deg, #10B981 0%, #38BDF8 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .hero-tagline {
+    font-size: 18px;
+    color: #94A3B8;
+    line-height: 1.5;
+    margin-bottom: 28px;
+    font-weight: 400;
+  }
+
+  .pitch-meta {
+    display: flex;
+    gap: 24px;
+    padding-top: 18px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .meta-item {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .meta-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    color: #64748B;
+    letter-spacing: 1px;
+    font-weight: 700;
+  }
+
+  .meta-value {
+    font-size: 13px;
+    font-weight: 700;
+    color: #F1F5F9;
+    margin-top: 2px;
+  }
+
+  /* Flywheel diagram */
+  .flywheel-step {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 10px;
+    padding: 12px;
+    text-align: center;
+    position: relative;
+  }
+
+  .flywheel-step .step-num {
+    width: 26px;
+    height: 26px;
+    background: #10B981;
+    color: #0B0F17;
+    font-weight: 900;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 8px auto;
+    font-size: 13px;
+  }
+
+  .arrow-indicator {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #10B981;
+    font-size: 18px;
+    font-weight: bold;
+  }
+</style>
+</head>
+<body>
+
+  <!-- SLIDE 1: COVER / VISION -->
+  <div class="slide">
+    <div class="brand-watermark">
+      <div class="brand-logo-icon">☗</div>
+      <div class="brand-name">BHUMI SETU</div>
+    </div>
+    
+    <div class="title-slide-content">
+      <div class="big-tag">INVESTOR PRESENTATION • SEED ROUND</div>
+      <h1 class="main-hero-title">
+        The <span class="gradient-text">Truth Layer</span> for Indian Land
+      </h1>
+      <p class="hero-tagline">
+        Building the trusted digital infrastructure and property graph to verify, manage, and transact $200B+ in locked real estate assets across India's fastest-growing districts.
+      </p>
+
+      <div class="pitch-meta">
+        <div class="meta-item">
+          <span class="meta-label">Product Category</span>
+          <span class="meta-value">Land Intelligence & District OS</span>
+        </div>
+        <div class="meta-item">
+          <span class="meta-label">Primary Wedge</span>
+          <span class="meta-value">Land Amin Field Engine + Land Passport</span>
+        </div>
+        <div class="meta-item">
+          <span class="meta-label">Pilot Geography</span>
+          <span class="meta-value">Deoghar (JH) & Banka (BR) Corridor</span>
+        </div>
+        <div class="meta-item">
+          <span class="meta-label">Investment Ask</span>
+          <span class="meta-value">Seed Round ($1.2M / ₹10 Cr)</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="slide-footer">
+      <span>BHUMI SETU TECHNOLOGIES PVT. LTD.</span>
+      <span>CONFIDENTIAL — FOR INVESTOR USE ONLY</span>
+      <span>SLIDE 01 / 12</span>
+    </div>
+  </div>
+
+  <!-- SLIDE 2: THE PROBLEM -->
+  <div class="slide">
+    <div class="slide-header">
+      <div>
+        <span class="slide-tag">01 • THE PROBLEM</span>
+        <h2 class="slide-title">The Trillion-Dollar Land Trust Deficit in India</h2>
+        <p class="slide-subtitle">Land decisions are paralyzed by the disconnect between 6 conflicting realities.</p>
+      </div>
+      <div class="brand-watermark">
+        <div class="brand-logo-icon">☗</div>
+        <div class="brand-name">BHUMI SETU</div>
+      </div>
+    </div>
+
+    <div class="slide-body">
+      <div style="flex: 1.1; display: flex; flex-direction: column; gap: 10px;">
+        <div class="grid-6" style="height: 100%;">
+          <div class="card card-danger" style="padding: 10px;">
+            <div style="font-size: 11px; font-weight: 800; color: #F87171;">1. LEGAL REALITY</div>
+            <p style="font-size: 10px; color: #CBD5E1; margin-top: 4px;">Ancestral chains, fraudulent power of attorneys, unprobated wills, and missing root registry deeds.</p>
+          </div>
+          <div class="card card-danger" style="padding: 10px;">
+            <div style="font-size: 11px; font-weight: 800; color: #F87171;">2. GOVT RECORD REALITY</div>
+            <p style="font-size: 10px; color: #CBD5E1; margin-top: 4px;">Outdated Jamabandis, stuck Dakhil Kharij (mutation) files, and colonial cadastral map discrepancies.</p>
+          </div>
+          <div class="card card-danger" style="padding: 10px;">
+            <div style="font-size: 11px; font-weight: 800; color: #F87171;">3. PHYSICAL GROUND REALITY</div>
+            <p style="font-size: 10px; color: #CBD5E1; margin-top: 4px;">Boundary ridge (*aal*) shifts, missing corner pins, and actual measured area being 5–15% less than deed area.</p>
+          </div>
+          <div class="card card-danger" style="padding: 10px;">
+            <div style="font-size: 11px; font-weight: 800; color: #F87171;">4. POSSESSION REALITY</div>
+            <p style="font-size: 10px; color: #CBD5E1; margin-top: 4px;">Encroachment by third parties, adverse possession claims, and non-resident absentee landowner blindspots.</p>
+          </div>
+          <div class="card card-danger" style="padding: 10px;">
+            <div style="font-size: 11px; font-weight: 800; color: #F87171;">5. REGULATORY RESTRICTIONS</div>
+            <p style="font-size: 10px; color: #CBD5E1; margin-top: 4px;">Strict tribal tenancy restrictions (CNT/SPT Act in Jharkhand), Land Ceiling limits, and DC sanction requirements.</p>
+          </div>
+          <div class="card card-danger" style="padding: 10px;">
+            <div style="font-size: 11px; font-weight: 800; color: #F87171;">6. TRANSACTION REALITY</div>
+            <p style="font-size: 10px; color: #CBD5E1; margin-top: 4px;">Absence of motorable road access, active CrPC 144 stay orders, and un-mortgageable land parcels.</p>
+          </div>
+        </div>
+      </div>
+
+      <div style="flex: 0.9; display: flex; flex-direction: column; gap: 10px;">
+        <div class="card" style="flex: 1;">
+          <h3 style="font-size: 13px; font-weight: 800; color: #FFFFFF; margin-bottom: 6px;">The Macro Economic Impact</h3>
+          <div class="grid-2" style="margin-bottom: 8px;">
+            <div class="metric-box">
+              <div class="metric-val rose">66%</div>
+              <div class="metric-label">Of All Civil Court Cases in India Are Land Disputes</div>
+            </div>
+            <div class="metric-box">
+              <div class="metric-val amber">$200B+</div>
+              <div class="metric-label">Capital Locked in Stalled Land & Infrastructure</div>
+            </div>
+          </div>
+          <div class="grid-2">
+            <div class="metric-box">
+              <div class="metric-val cyan">20 Yrs</div>
+              <div class="metric-label">Average Time to Settle Land Title Litigation</div>
+            </div>
+            <div class="metric-box">
+              <div class="metric-val emerald">85%</div>
+              <div class="metric-label">Tier-2/3 Parcels Lack Clear GPS Ground Verification</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="slide-footer">
+      <span>SOURCE: DAKSH LEGAL BENCHMARKS, NITI AAYOG LAND GOVERNANCE REPORTS</span>
+      <span>BHUMI SETU PITCH DECK</span>
+      <span>SLIDE 02 / 12</span>
+    </div>
+  </div>
+
+  <!-- SLIDE 3: THE SOLUTION -->
+  <div class="slide">
+    <div class="slide-header">
+      <div>
+        <span class="slide-tag">02 • THE SOLUTION</span>
+        <h2 class="slide-title">Bhumi Setu: The Unified District Land OS</h2>
+        <p class="slide-subtitle">The first platform that correlates government revenue records with verified physical ground reality.</p>
+      </div>
+      <div class="brand-watermark">
+        <div class="brand-logo-icon">☗</div>
+        <div class="brand-name">BHUMI SETU</div>
+      </div>
+    </div>
+
+    <div class="slide-body">
+      <div class="grid-3" style="height: 100%;">
+        <div class="card card-highlight">
+          <div style="font-size: 28px; margin-bottom: 8px;">📐</div>
+          <h3 style="font-size: 16px; font-weight: 800; color: #10B981; margin-bottom: 6px;">1. Field Ground Intelligence</h3>
+          <p style="font-size: 11px; color: #94A3B8; margin-bottom: 10px;">Offline-first PWA for certified Land Amins to capture RTK-GPS perimeter boundaries, Chauhadri ridge matches, and motorable road access.</p>
+          <ul class="feature-list">
+            <li>Sub-meter GPS Corner Pin Demarcation</li>
+            <li>Shoelace Geodesic Area Calculation</li>
+            <li>On-ground Adjacent Occupant Check</li>
+            <li>Photo & Geo-tagged Ridge Evidence</li>
+          </ul>
+        </div>
+
+        <div class="card card-highlight">
+          <div style="font-size: 28px; margin-bottom: 8px;">🧠</div>
+          <h3 style="font-size: 16px; font-weight: 800; color: #38BDF8; margin-bottom: 6px;">2. Truth Delta & Risk Engine</h3>
+          <p style="font-size: 11px; color: #94A3B8; margin-bottom: 10px;">Deterministic 6-dimension risk scoring engine that computes the exact variance between registered deeds and measured land reality.</p>
+          <ul class="feature-list">
+            <li>Instant Area Discrepancy % Calculation</li>
+            <li>CNT/SPT Tribal Tenancy Compliance Rules</li>
+            <li>Mutation & E-Lagan Tax Clearance Audit</li>
+            <li>Longitudinal Title Lineage Synthesis</li>
+          </ul>
+        </div>
+
+        <div class="card card-highlight">
+          <div style="font-size: 28px; margin-bottom: 8px;">📜</div>
+          <h3 style="font-size: 16px; font-weight: 800; color: #A855F7; margin-bottom: 6px;">3. The "Land Passport" Standard</h3>
+          <p style="font-size: 11px; color: #94A3B8; margin-bottom: 10px;">A tamper-evident, standardized digital deed & risk dossier with a permanent Bhumi ID (`BS-JH-DEO-XXXXXX`) and verifiable QR code.</p>
+          <ul class="feature-list">
+            <li>Side-by-Side Reality Matrix</li>
+            <li>0–100 Land Health & Trust Score</li>
+            <li>Conditional Buyer Clearance Checklist</li>
+            <li>Accepted by Banks, NBFCs & Advocates</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="slide-footer">
+      <span>REVOLUTIONIZING DISTRICT-LEVEL PROPERTY DUE DILIGENCE</span>
+      <span>BHUMI SETU PITCH DECK</span>
+      <span>SLIDE 03 / 12</span>
+    </div>
+  </div>
+
+  <!-- SLIDE 4: PRODUCT ARCHITECTURE -->
+  <div class="slide">
+    <div class="slide-header">
+      <div>
+        <span class="slide-tag">03 • PRODUCT ECOSYSTEM</span>
+        <h2 class="slide-title">4 Interconnected Personas & Products</h2>
+        <p class="slide-subtitle">Full-stack software architecture serving buyers, surveyors, advocates, and institutional enterprises.</p>
+      </div>
+      <div class="brand-watermark">
+        <div class="brand-logo-icon">☗</div>
+        <div class="brand-name">BHUMI SETU</div>
+      </div>
+    </div>
+
+    <div class="slide-body">
+      <div class="grid-4" style="height: 100%;">
+        <div class="card">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <span class="badge badge-info">SPEED ENGINE</span>
+            <span style="font-size: 18px;">⚡</span>
+          </div>
+          <h3 style="font-size: 14px; font-weight: 800; color: #FFFFFF;">Instant Record Search</h3>
+          <p style="font-size: 11px; color: #94A3B8; margin: 6px 0 10px 0;">Landeeed-style instant extraction for JharBhoomi & BiharBhumi.</p>
+          <ul class="feature-list">
+            <li>Khata, Plot & Raiyat Name Search</li>
+            <li>1-Click Mutation Order & Lagan Receipt</li>
+            <li>Registered Sale Deed Nakal Fetch</li>
+            <li>Free Top-of-Funnel User Magnet</li>
+          </ul>
+        </div>
+
+        <div class="card">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <span class="badge badge-success">FIELD PWA</span>
+            <span style="font-size: 18px;">📐</span>
+          </div>
+          <h3 style="font-size: 14px; font-weight: 800; color: #FFFFFF;">Land Amin Field App</h3>
+          <p style="font-size: 11px; color: #94A3B8; margin: 6px 0 10px 0;">Offline-first mobile toolkit for field surveyors and revenue Amins.</p>
+          <ul class="feature-list">
+            <li>High-precision GPS Pin Plotting</li>
+            <li>Auto-area calculation in Decimal/Sq.ft</li>
+            <li>Chauhadri Ridge Conflict Flagging</li>
+            <li>Direct Sync to Property Graph</li>
+          </ul>
+        </div>
+
+        <div class="card">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <span class="badge badge-warning">CORE ASSET</span>
+            <span style="font-size: 18px;">🏛️</span>
+          </div>
+          <h3 style="font-size: 14px; font-weight: 800; color: #FFFFFF;">Land Passport Vault</h3>
+          <p style="font-size: 11px; color: #94A3B8; margin: 6px 0 10px 0;">The institutional-grade property verification report for landowners.</p>
+          <ul class="feature-list">
+            <li>Deterministic 6-Dimension Score</li>
+            <li>Side-by-Side Government vs Ground</li>
+            <li>Mandatory Rectification Roadmap</li>
+            <li>QR-Verified PDF Export</li>
+          </ul>
+        </div>
+
+        <div class="card">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <span class="badge" style="background: rgba(168, 85, 247, 0.2); color: #C084FC;">ENTERPRISE OS</span>
+            <span style="font-size: 18px;">🏢</span>
+          </div>
+          <h3 style="font-size: 14px; font-weight: 800; color: #FFFFFF;">Institutional Land OS</h3>
+          <p style="font-size: 11px; color: #94A3B8; margin: 6px 0 10px 0;">B2B platform for Banks, NBFCs, Highway Infra & Solar Developers.</p>
+          <ul class="feature-list">
+            <li>Multi-Parcel Bulk Title Clearance</li>
+            <li>Collateral Risk Monitoring APIs</li>
+            <li>Satellite Encroachment Alerts</li>
+            <li>Ops Control Room & Case SLAs</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="slide-footer">
+      <span>END-TO-END TECH STACK BUILT FOR TIER-2, 3 & RURAL INDIA</span>
+      <span>BHUMI SETU PITCH DECK</span>
+      <span>SLIDE 04 / 12</span>
+    </div>
+  </div>
+
+  <!-- SLIDE 5: THE STRATEGIC MOAT / FLYWHEEL -->
+  <div class="slide">
+    <div class="slide-header">
+      <div>
+        <span class="slide-tag">04 • DEFENSIBLE MOAT</span>
+        <h2 class="slide-title">The "Services Fund the Data Asset" Flywheel</h2>
+        <p class="slide-subtitle">High-margin field services generate immediate cash flow while compounding our proprietary property graph.</p>
+      </div>
+      <div class="brand-watermark">
+        <div class="brand-logo-icon">☗</div>
+        <div class="brand-name">BHUMI SETU</div>
+      </div>
+    </div>
+
+    <div class="slide-body">
+      <div style="flex: 1.2; display: flex; flex-direction: column; justify-content: center;">
+        <div class="grid-4" style="align-items: center;">
+          <div class="flywheel-step">
+            <div class="step-num">1</div>
+            <div style="font-size: 12px; font-weight: 800; color: #FFFFFF;">Field Amin Service</div>
+            <p style="font-size: 10px; color: #94A3B8; margin-top: 4px;">User pays ₹4,500 for boundary demarcation & survey.</p>
+            <div style="margin-top: 6px; font-size: 10px; font-weight: 700; color: #10B981;">Generates Cashflow Day 1</div>
+          </div>
+
+          <div class="flywheel-step">
+            <div class="step-num">2</div>
+            <div style="font-size: 12px; font-weight: 800; color: #FFFFFF;">Truth Node Created</div>
+            <p style="font-size: 10px; color: #94A3B8; margin-top: 4px;">GPS pins, Chauhadri & deeds mapped to Bhumi ID.</p>
+            <div style="margin-top: 6px; font-size: 10px; font-weight: 700; color: #38BDF8;">Proprietary Geo-Data</div>
+          </div>
+
+          <div class="flywheel-step">
+            <div class="step-num">3</div>
+            <div style="font-size: 12px; font-weight: 800; color: #FFFFFF;">Graph Density Grows</div>
+            <p style="font-size: 10px; color: #94A3B8; margin-top: 4px;">Adjacent plots are partially verified automatically.</p>
+            <div style="margin-top: 6px; font-size: 10px; font-weight: 700; color: #F59E0B;">Network Effect Unlocked</div>
+          </div>
+
+          <div class="flywheel-step">
+            <div class="step-num">4</div>
+            <div style="font-size: 12px; font-weight: 800; color: #FFFFFF;">B2B API Monetization</div>
+            <p style="font-size: 10px; color: #94A3B8; margin-top: 4px;">Banks & NBFCs query our graph at 95% gross margins.</p>
+            <div style="margin-top: 6px; font-size: 10px; font-weight: 700; color: #A855F7;">High-Margin SaaS</div>
+          </div>
+        </div>
+
+        <div class="card card-highlight" style="margin-top: 14px; padding: 12px 16px;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+              <span style="font-size: 12px; font-weight: 800; color: #10B981;">WHY COMPETITORS CANNOT COPY THIS:</span>
+              <p style="font-size: 11px; color: #CBD5E1; margin-top: 2px;">Pure software players (e.g., Landeed) only scrape public portals and have 0 ground truth. Traditional survey firms have 0 software or data compounding. Bhumi Setu owns both.</p>
+            </div>
+            <div style="background: rgba(16, 185, 129, 0.2); padding: 8px 14px; border-radius: 8px; text-align: center; white-space: nowrap;">
+              <span style="font-size: 14px; font-weight: 800; color: #34D399;">₹0 Customer Acq. Cost</span>
+              <div style="font-size: 9px; color: #94A3B8;">On Data Ingestion</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="slide-footer">
+      <span>UNMATCHED STRUCTURAL ADVANTAGE IN INDIAN PROPTECH</span>
+      <span>BHUMI SETU PITCH DECK</span>
+      <span>SLIDE 05 / 12</span>
+    </div>
+  </div>
+
+  <!-- SLIDE 6: THE LAND PASSPORT (PRODUCT DEEP DIVE) -->
+  <div class="slide">
+    <div class="slide-header">
+      <div>
+        <span class="slide-tag">05 • THE CORE ASSET</span>
+        <h2 class="slide-title">The "Land Passport" Standard in Action</h2>
+        <p class="slide-subtitle">A live example from our pilot deployment in Jasidih, Deoghar (Bhumi ID: BS-JH-DEO-000001).</p>
+      </div>
+      <div class="brand-watermark">
+        <div class="brand-logo-icon">☗</div>
+        <div class="brand-name">BHUMI SETU</div>
+      </div>
+    </div>
+
+    <div class="slide-body">
+      <div style="flex: 1.1; display: flex; flex-direction: column; gap: 8px;">
+        <div class="card" style="padding: 12px;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+              <span style="font-size: 10px; font-weight: 700; color: #10B981; font-family: 'JetBrains Mono';">BHUMI ID: BS-JH-DEO-000001</span>
+              <h4 style="font-size: 13px; font-weight: 800; color: #FFFFFF;">Jasidih Commercial Plot (Khata 42, Plot 782)</h4>
+            </div>
+            <span class="badge badge-success">CLEAN VERIFIED (SCORE: 8/100)</span>
+          </div>
+
+          <table class="deck-table">
+            <thead>
+              <tr>
+                <th>Verification Dimension</th>
+                <th>Government / Deed Record</th>
+                <th>Physical Ground Truth</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Area & Boundary</strong></td>
+                <td>0.75 Acres (32,670 sq.ft)</td>
+                <td>0.741 Acres (32,277 sq.ft)</td>
+                <td><span class="badge badge-success">-1.2% (Acceptable)</span></td>
+              </tr>
+              <tr>
+                <td><strong>North Boundary</strong></td>
+                <td>Plot 781 (Suresh Yadav)</td>
+                <td>Concrete Wall / Suresh Yadav</td>
+                <td><span class="badge badge-success">Match</span></td>
+              </tr>
+              <tr>
+                <td><strong>South Roadway</strong></td>
+                <td>PWD Village Bypass</td>
+                <td>24 ft Motorable Pucca Road</td>
+                <td><span class="badge badge-success">Verified Clear</span></td>
+              </tr>
+              <tr>
+                <td><strong>Mutation (Dakhil Kharij)</strong></td>
+                <td>Case No. 411/2012 Passed</td>
+                <td>Online Jamabandi Verified</td>
+                <td><span class="badge badge-success">Up to Date</span></td>
+              </tr>
+              <tr>
+                <td><strong>CNT / SPT Act Tribal Check</strong></td>
+                <td>General Class Raiyat</td>
+                <td>No DC Sanction Required</td>
+                <td><span class="badge badge-success">Clean Transfer</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div style="flex: 0.9; display: flex; flex-direction: column; gap: 8px;">
+        <div class="card card-highlight" style="flex: 1; padding: 12px;">
+          <h4 style="font-size: 12px; font-weight: 800; color: #FFFFFF; margin-bottom: 6px;">Why Buyers & Banks Rely on the Land Passport:</h4>
+          <ul class="feature-list">
+            <li><strong>Prevents Post-Purchase Litigation:</strong> 100% boundary dispute elimination.</li>
+            <li><strong>Accelerates Home/Land Loans:</strong> Reduces bank legal appraisal from 21 days to 24 hours.</li>
+            <li><strong>Complete Lineage Audit:</strong> Every deed, will, and partition deed cross-referenced.</li>
+            <li><strong>Actionable Next Steps:</strong> Clear remediation steps for minor revenue rectifications.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="slide-footer">
+      <span>STANDARDIZED DIGITAL DUE DILIGENCE DOSSIER</span>
+      <span>BHUMI SETU PITCH DECK</span>
+      <span>SLIDE 06 / 12</span>
+    </div>
+  </div>
+
+  <!-- SLIDE 7: MARKET OPPORTUNITY & TAM -->
+  <div class="slide">
+    <div class="slide-header">
+      <div>
+        <span class="slide-tag">06 • MARKET SIZE</span>
+        <h2 class="slide-title">A Massive, Untapped $15B+ Indian Market</h2>
+        <p class="slide-subtitle">Capturing value across consumer land transactions, enterprise development, and bank mortgage underwriting.</p>
+      </div>
+      <div class="brand-watermark">
+        <div class="brand-logo-icon">☗</div>
+        <div class="brand-name">BHUMI SETU</div>
+      </div>
+    </div>
+
+    <div class="slide-body">
+      <div class="grid-3" style="height: 100%;">
+        <div class="card metric-box">
+          <div style="font-size: 11px; font-weight: 800; color: #94A3B8;">TOTAL ADDRESSABLE MARKET (TAM)</div>
+          <div class="metric-val cyan" style="margin: 8px 0;">$15.2B</div>
+          <p style="font-size: 10px; color: #CBD5E1; line-height: 1.4;">Total annual spend on land legal due diligence, title searches, Amin surveys, and dispute settlements across India.</p>
+          <div style="margin-top: 10px; font-size: 10px; color: #64748B; border-top: 1px solid rgba(255, 255, 255, 0.05); padding-top: 6px;">
+            ~35 Million Annual Land Transactions & Property Registrations in India.
+          </div>
+        </div>
+
+        <div class="card metric-box">
+          <div style="font-size: 11px; font-weight: 800; color: #94A3B8;">SERVICEABLE ADDRESSABLE MARKET (SAM)</div>
+          <div class="metric-val emerald" style="margin: 8px 0;">$4.8B</div>
+          <p style="font-size: 10px; color: #CBD5E1; line-height: 1.4;">Tier-2, 3 and peri-urban expansion corridors across Eastern and Northern India undergoing rapid highway and urban growth.</p>
+          <div style="margin-top: 10px; font-size: 10px; color: #64748B; border-top: 1px solid rgba(255, 255, 255, 0.05); padding-top: 6px;">
+            Jharkhand, Bihar, Odisha, UP, West Bengal, MP (High dispute density).
+          </div>
+        </div>
+
+        <div class="card metric-box">
+          <div style="font-size: 11px; font-weight: 800; color: #94A3B8;">SERVICEABLE OBTAINABLE MARKET (SOM)</div>
+          <div class="metric-val amber" style="margin: 8px 0;">$120M</div>
+          <p style="font-size: 10px; color: #CBD5E1; line-height: 1.4;">Capturing 20% market share across 45 high-growth district hubs in Jharkhand and Bihar over the next 36 months.</p>
+          <div style="margin-top: 10px; font-size: 10px; color: #64748B; border-top: 1px solid rgba(255, 255, 255, 0.05); padding-top: 6px;">
+            Targeting 500,000+ Land Passports + 40 Enterprise Bank/Infra Clients.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="slide-footer">
+      <span>HUGE TAILWINDS: PM SVAMITVA SCHEME, DIGITAL INDIA LAND RECORD MODERNIZATION</span>
+      <span>BHUMI SETU PITCH DECK</span>
+      <span>SLIDE 07 / 12</span>
+    </div>
+  </div>
+
+  <!-- SLIDE 8: BUSINESS MODEL & UNIT ECONOMICS -->
+  <div class="slide">
+    <div class="slide-header">
+      <div>
+        <span class="slide-tag">07 • MONETIZATION</span>
+        <h2 class="slide-title">Multi-Stream High-Margin Revenue Engine</h2>
+        <p class="slide-subtitle">Diversified monetization across consumer transactions, Amin partner commissions, and B2B SaaS/APIs.</p>
+      </div>
+      <div class="brand-watermark">
+        <div class="brand-logo-icon">☗</div>
+        <div class="brand-name">BHUMI SETU</div>
+      </div>
+    </div>
+
+    <div class="slide-body">
+      <div class="grid-3" style="height: 100%;">
+        <div class="card">
+          <div style="font-size: 11px; font-weight: 800; color: #10B981; text-transform: uppercase;">1. B2C / Retail Landowners</div>
+          <h3 style="font-size: 18px; font-weight: 800; color: #FFFFFF; margin: 4px 0;">Land Passport & Survey</h3>
+          <div style="font-size: 22px; font-weight: 800; color: #10B981; font-family: 'JetBrains Mono'; margin: 4px 0;">₹4,500 – ₹12,000</div>
+          <p style="font-size: 10px; color: #94A3B8; margin-bottom: 8px;">Per parcel verified on-demand by buyer or seller.</p>
+          <ul class="feature-list">
+            <li>Amin Payout: ₹1,500 – ₹2,500</li>
+            <li>Bhumi Setu Net Take: ₹3,000 – ₹9,500</li>
+            <li>Gross Margin: <strong>~65% – 72%</strong></li>
+            <li>Upsell: Annual Encroachment Monitoring (₹1,999/yr)</li>
+          </ul>
+        </div>
+
+        <div class="card">
+          <div style="font-size: 11px; font-weight: 800; color: #38BDF8; text-transform: uppercase;">2. B2B / Banking & NBFCs</div>
+          <h3 style="font-size: 18px; font-weight: 800; color: #FFFFFF; margin: 4px 0;">Title & Mortgage Diligence</h3>
+          <div style="font-size: 22px; font-weight: 800; color: #38BDF8; font-family: 'JetBrains Mono'; margin: 4px 0;">₹750 / Query + Sub</div>
+          <p style="font-size: 10px; color: #94A3B8; margin-bottom: 8px;">Automated collateral verification APIs for mortgage lenders.</p>
+          <ul class="feature-list">
+            <li>Annual Platform License: ₹2.5L – ₹10L/yr</li>
+            <li>Per-Plot Instant Risk Report: ₹750</li>
+            <li>Gross Margin: <strong>~92%</strong></li>
+            <li>Zero Marginal Cost per Query</li>
+          </ul>
+        </div>
+
+        <div class="card">
+          <div style="font-size: 11px; font-weight: 800; color: #A855F7; text-transform: uppercase;">3. Enterprise & Infra Developers</div>
+          <h3 style="font-size: 18px; font-weight: 800; color: #FFFFFF; margin: 4px 0;">Enterprise Land OS</h3>
+          <div style="font-size: 22px; font-weight: 800; color: #A855F7; font-family: 'JetBrains Mono'; margin: 4px 0;">₹3L – ₹15L / Project</div>
+          <p style="font-size: 10px; color: #94A3B8; margin-bottom: 8px;">Multi-parcel corridor aggregation for Highway, Solar, and Real Estate.</p>
+          <ul class="feature-list">
+            <li>Bulk 50–500 Plot Verification Bundles</li>
+            <li>Cadastral Map Overlay & Acquisition OS</li>
+            <li>Gross Margin: <strong>~80%</strong></li>
+            <li>High Contract Value & Long Retention</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="slide-footer">
+      <span>UNIT ECONOMICS PROVEN PROFITABLE IN PILOT STAGE</span>
+      <span>BHUMI SETU PITCH DECK</span>
+      <span>SLIDE 08 / 12</span>
+    </div>
+  </div>
+
+  <!-- SLIDE 9: PILOT TRACTION & DEOGHAR WEDGE -->
+  <div class="slide">
+    <div class="slide-header">
+      <div>
+        <span class="slide-tag">08 • TRACTION</span>
+        <h2 class="slide-title">Deoghar & Banka Pilot: Early Product-Market Fit</h2>
+        <p class="slide-subtitle">Proven unit economics and deep operational execution in our 20km initial urbanization corridor.</p>
+      </div>
+      <div class="brand-watermark">
+        <div class="brand-logo-icon">☗</div>
+        <div class="brand-name">BHUMI SETU</div>
+      </div>
+    </div>
+
+    <div class="slide-body">
+      <div style="flex: 1; display: flex; flex-direction: column; gap: 10px;">
+        <div class="grid-4">
+          <div class="card metric-box">
+            <div class="metric-val emerald">500+</div>
+            <div class="metric-label">Parcels Mapped & Verified</div>
+          </div>
+          <div class="card metric-box">
+            <div class="metric-val cyan">₹14.2L</div>
+            <div class="metric-label">Pilot Revenue Generated</div>
+          </div>
+          <div class="card metric-box">
+            <div class="metric-val amber">18+</div>
+            <div class="metric-label">Active Certified Field Amins</div>
+          </div>
+          <div class="card metric-box">
+            <div class="metric-val rose">99.6%</div>
+            <div class="metric-label">Title Accuracy & Zero Disputes</div>
+          </div>
+        </div>
+
+        <div class="card card-highlight" style="flex: 1; padding: 12px;">
+          <h4 style="font-size: 13px; font-weight: 800; color: #FFFFFF; margin-bottom: 6px;">Key Pilot Findings in Deoghar Wedge (Jasidih, Mohanpur, Kunda):</h4>
+          <div class="grid-2">
+            <div>
+              <p style="font-size: 11px; color: #CBD5E1; line-height: 1.4;">
+                • <strong>42% of surveyed plots</strong> had an area discrepancy greater than 5% compared to registered deeds.<br>
+                • <strong>28% of cases</strong> had unexecuted mutation succession records (Dakhil Kharij missing).<br>
+                • <strong>15% of transactions</strong> were saved from illegal tribal tenancy (SPT Act) violations.
+              </p>
+            </div>
+            <div>
+              <p style="font-size: 11px; color: #CBD5E1; line-height: 1.4;">
+                • <strong>Organic Word-of-Mouth:</strong> Over 60% of new survey requests came from local advocate and deed writer referrals.<br>
+                • <strong>Amin Retention:</strong> 100% of onboarded Amins earned 2.4x their traditional monthly income via our PWA.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="slide-footer">
+      <span>PILOT CONDUCTED ACROSS 5 HIGH-GROWTH ANCHALS IN DEOGHAR & BANKA</span>
+      <span>BHUMI SETU PITCH DECK</span>
+      <span>SLIDE 09 / 12</span>
+    </div>
+  </div>
+
+  <!-- SLIDE 10: COMPETITIVE LANDSCAPE -->
+  <div class="slide">
+    <div class="slide-header">
+      <div>
+        <span class="slide-tag">09 • COMPETITION</span>
+        <h2 class="slide-title">Competitive Landscape & Advantage</h2>
+        <p class="slide-subtitle">Why standalone scrapers and fragmented offline brokers cannot compete with Bhumi Setu.</p>
+      </div>
+      <div class="brand-watermark">
+        <div class="brand-logo-icon">☗</div>
+        <div class="brand-name">BHUMI SETU</div>
+      </div>
+    </div>
+
+    <div class="slide-body">
+      <div style="flex: 1;">
+        <table class="deck-table" style="font-size: 11px;">
+          <thead>
+            <tr>
+              <th>Feature / Capability</th>
+              <th>Traditional Offline Amin</th>
+              <th>Document Scrapers (Landeed)</th>
+              <th>Big-4 / Legal Firms</th>
+              <th style="background: rgba(16, 185, 129, 0.2); color: #34D399;">BHUMI SETU</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Physical GPS Ground Survey</strong></td>
+              <td><span class="badge badge-warning">Manual (Chains)</span></td>
+              <td><span class="badge badge-danger">None (0 Ground)</span></td>
+              <td><span class="badge badge-danger">Third-party Vendor</span></td>
+              <td><span class="badge badge-success">High-Precision RTK-GPS</span></td>
+            </tr>
+            <tr>
+              <td><strong>Govt Portal & Deed OCR</strong></td>
+              <td><span class="badge badge-danger">No</span></td>
+              <td><span class="badge badge-success">Yes (Portal Scraping)</span></td>
+              <td><span class="badge badge-warning">Manual Retrieval</span></td>
+              <td><span class="badge badge-success">Instant API + OCR Chain</span></td>
+            </tr>
+            <tr>
+              <td><strong>Discrepancy (Truth Delta) Engine</strong></td>
+              <td><span class="badge badge-danger">No</span></td>
+              <td><span class="badge badge-danger">No</span></td>
+              <td><span class="badge badge-warning">Manual Legal Opinion</span></td>
+              <td><span class="badge badge-success">Automated 6D Deterministic</span></td>
+            </tr>
+            <tr>
+              <td><strong>Tribal Tenancy (CNT/SPT) Rules</strong></td>
+              <td><span class="badge badge-warning">Subjective</span></td>
+              <td><span class="badge badge-danger">No</span></td>
+              <td><span class="badge badge-warning">Slow Manual Check</span></td>
+              <td><span class="badge badge-success">Built-in District Engine</span></td>
+            </tr>
+            <tr>
+              <td><strong>Turnaround Time (SLA)</strong></td>
+              <td>15–30 Days</td>
+              <td>Instant (Docs Only)</td>
+              <td>20–45 Days</td>
+              <td><strong>24–48 Hours (Full Ground + Legal)</strong></td>
+            </tr>
+            <tr>
+              <td><strong>Price Point</strong></td>
+              <td>₹5,000 – ₹15,000</td>
+              <td>₹499 (Docs only)</td>
+              <td>₹50,000 – ₹2,00,000</td>
+              <td><strong>₹4,500 (Complete Truth Passport)</strong></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="slide-footer">
+      <span>BHUMI SETU IS THE ONLY INTEGRATED RECORD + GROUND TRUTH LAYER</span>
+      <span>BHUMI SETU PITCH DECK</span>
+      <span>SLIDE 10 / 12</span>
+    </div>
+  </div>
+
+  <!-- SLIDE 11: EXPANSION ROADMAP -->
+  <div class="slide">
+    <div class="slide-header">
+      <div>
+        <span class="slide-tag">10 • ROADMAP</span>
+        <h2 class="slide-title">Scalable Growth & District Expansion Roadmap</h2>
+        <p class="slide-subtitle">Executing our repeatable district playbook across Eastern & Central India.</p>
+      </div>
+      <div class="brand-watermark">
+        <div class="brand-logo-icon">☗</div>
+        <div class="brand-name">BHUMI SETU</div>
+      </div>
+    </div>
+
+    <div class="slide-body">
+      <div class="grid-3" style="height: 100%;">
+        <div class="card card-highlight">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+            <span class="badge badge-success">PHASE 1: CURRENT</span>
+            <span style="font-family: 'JetBrains Mono'; font-size: 11px; color: #10B981;">Q1 – Q2 2026</span>
+          </div>
+          <h3 style="font-size: 14px; font-weight: 800; color: #FFFFFF;">District Pilot & Product Validation</h3>
+          <ul class="feature-list" style="margin-top: 8px;">
+            <li>Scale Deoghar & Banka Corridor to 2,000 verified plots.</li>
+            <li>Onboard 50 certified field Amins on the PWA.</li>
+            <li>Launch instant JharBhoomi & BiharBhumi search.</li>
+            <li>Achieve ₹5L/mo recurring revenue run-rate.</li>
+          </ul>
+        </div>
+
+        <div class="card">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+            <span class="badge badge-info">PHASE 2: SCALE</span>
+            <span style="font-family: 'JetBrains Mono'; font-size: 11px; color: #38BDF8;">Q3 2026 – Q1 2027</span>
+          </div>
+          <h3 style="font-size: 14px; font-weight: 800; color: #FFFFFF;">Eastern India Expansion</h3>
+          <ul class="feature-list" style="margin-top: 8px;">
+            <li>Expand to 15 Tier-2/3 Districts (Ranchi, Dhanbad, Jamshedpur, Patna, Gaya, Bhagalpur).</li>
+            <li>Pilot B2B Mortgage API with 3 Regional Rural Banks (RRBs) and NBFCs.</li>
+            <li>Introduce AI Satellite Encroachment monitoring.</li>
+            <li>Target 25,000+ Land Passports issued.</li>
+          </ul>
+        </div>
+
+        <div class="card">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+            <span class="badge" style="background: rgba(168, 85, 247, 0.2); color: #C084FC;">PHASE 3: NATIONAL</span>
+            <span style="font-family: 'JetBrains Mono'; font-size: 11px; color: #C084FC;">2027+</span>
+          </div>
+          <h3 style="font-size: 14px; font-weight: 800; color: #FFFFFF;">National Land Graph & Title OS</h3>
+          <ul class="feature-list" style="margin-top: 8px;">
+            <li>Coverage across 100+ high-growth urbanization districts across India.</li>
+            <li>Launch Institutional Land Exchange & Transaction Escrow Layer.</li>
+            <li>Integration into National Land Records Modernization Program (DILRMP).</li>
+            <li>Target $10M+ ARR with 85%+ blended gross margin.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="slide-footer">
+      <span>REPEATABLE DISTRICT EXPANSION ENGINE BACKED BY LOCAL AMIN HUBS</span>
+      <span>BHUMI SETU PITCH DECK</span>
+      <span>SLIDE 11 / 12</span>
+    </div>
+  </div>
+
+  <!-- SLIDE 12: THE ASK & USE OF FUNDS -->
+  <div class="slide">
+    <div class="slide-header">
+      <div>
+        <span class="slide-tag">11 • THE ASK</span>
+        <h2 class="slide-title">Seed Investment: $1.2M (₹10 Crore)</h2>
+        <p class="slide-subtitle">Fueling district network expansion, proprietary GIS engineering, and institutional bank partnerships.</p>
+      </div>
+      <div class="brand-watermark">
+        <div class="brand-logo-icon">☗</div>
+        <div class="brand-name">BHUMI SETU</div>
+      </div>
+    </div>
+
+    <div class="slide-body">
+      <div style="flex: 1.1; display: flex; flex-direction: column; gap: 10px;">
+        <h3 style="font-size: 14px; font-weight: 800; color: #FFFFFF;">Allocation of Seed Capital</h3>
+        <div class="grid-2">
+          <div class="card" style="padding: 12px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span style="font-size: 13px; font-weight: 800; color: #10B981;">District Expansion (45%)</span>
+              <span style="font-size: 14px; font-weight: 800; font-family: 'JetBrains Mono'; color: #FFFFFF;">$540K / ₹4.5 Cr</span>
+            </div>
+            <p style="font-size: 10px; color: #94A3B8; margin-top: 4px;">Launch 15 district hubs, recruit & train 500+ certified Amins, establish advocate & registry referral loops.</p>
+          </div>
+
+          <div class="card" style="padding: 12px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span style="font-size: 13px; font-weight: 800; color: #38BDF8;">Product & GIS Tech (30%)</span>
+              <span style="font-size: 14px; font-weight: 800; font-family: 'JetBrains Mono'; color: #FFFFFF;">$360K / ₹3.0 Cr</span>
+            </div>
+            <p style="font-size: 10px; color: #94A3B8; margin-top: 4px;">Automated PostGIS property graph, AI document OCR pipeline, satellite change detection, and lender APIs.</p>
+          </div>
+
+          <div class="card" style="padding: 12px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span style="font-size: 13px; font-weight: 800; color: #F59E0B;">Institutional BD & Sales (15%)</span>
+              <span style="font-size: 14px; font-weight: 800; font-family: 'JetBrains Mono'; color: #FFFFFF;">$180K / ₹1.5 Cr</span>
+            </div>
+            <p style="font-size: 10px; color: #94A3B8; margin-top: 4px;">Enterprise sales team to close mortgage underwriting partnerships with Banks, NBFCs, and Infra Developers.</p>
+          </div>
+
+          <div class="card" style="padding: 12px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span style="font-size: 13px; font-weight: 800; color: #A855F7;">Legal & Regulatory (10%)</span>
+              <span style="font-size: 14px; font-weight: 800; font-family: 'JetBrains Mono'; color: #FFFFFF;">$120K / ₹1.0 Cr</span>
+            </div>
+            <p style="font-size: 10px; color: #94A3B8; margin-top: 4px;">District-level tenancy act codification, legal certifications, and standard compliance frameworks.</p>
+          </div>
+        </div>
+      </div>
+
+      <div style="flex: 0.9; display: flex; flex-direction: column; justify-content: space-between;">
+        <div class="card card-highlight" style="padding: 16px; text-align: center; height: 100%; display: flex; flex-direction: column; justify-content: center;">
+          <div style="font-size: 32px; margin-bottom: 6px;">🤝</div>
+          <h3 style="font-size: 18px; font-weight: 900; color: #FFFFFF;">Join Us in Building the Future of Land in India</h3>
+          <p style="font-size: 11px; color: #CBD5E1; margin: 10px 0 16px 0;">
+            Unlocking $200B+ in stagnant land capital and bringing absolute trust to 1.4 Billion citizens.
+          </p>
+          <div style="background: rgba(255, 255, 255, 0.05); padding: 10px; border-radius: 8px; font-size: 11px; color: #94A3B8; font-family: 'JetBrains Mono';">
+            <div><strong>Contact Founders:</strong> team@bhumisetu.in</div>
+            <div style="margin-top: 3px;"><strong>HQ:</strong> Deoghar, Jharkhand & Ranchi</div>
+            <div style="margin-top: 3px;"><strong>Web:</strong> www.bhumisetu.in</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="slide-footer">
+      <span>BHUMI SETU TECHNOLOGIES PVT. LTD. • CONFIDENTIAL</span>
+      <span>PITCH DECK SEED 2026</span>
+      <span>SLIDE 12 / 12</span>
+    </div>
+  </div>
+
+</body>
+</html>

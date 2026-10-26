@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BhumiSetu — Phase 3 Document Ingestion & Evidence Review Pipeline</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card-bg: #1e293b;
+      --border: #334155;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --accent: #38bdf8;
+      --success: #22c55e;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      padding: 24px;
+      line-height: 1.5;
+    }
+    header {
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 16px;
+      margin-bottom: 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    h1 { font-size: 1.4rem; font-weight: 700; color: var(--accent); }
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      background: var(--border);
+    }
+    .badge-success { background: rgba(34, 197, 94, 0.2); color: var(--success); }
+    .badge-warning { background: rgba(245, 158, 11, 0.2); color: var(--warning); }
+    .grid {
+      display: grid;
+      grid-template-columns: 340px 1fr 420px;
+      gap: 20px;
+      height: calc(100vh - 120px);
+    }
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .card-title {
+      font-size: 0.95rem;
+      font-weight: 600;
+      margin-bottom: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .scroll-area {
+      flex: 1;
+      overflow-y: auto;
+      padding-right: 4px;
+    }
+    .form-group { margin-bottom: 12px; }
+    label { display: block; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 4px; }
+    input, select, textarea {
+      width: 100%;
+      background: #0f172a;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      color: var(--text);
+      padding: 8px;
+      font-size: 0.85rem;
+    }
+    button {
+      background: var(--accent);
+      color: #0f172a;
+      border: none;
+      border-radius: 4px;
+      padding: 8px 12px;
+      font-weight: 600;
+      cursor: pointer;
+      font-size: 0.85rem;
+      width: 100%;
+    }
+    button:hover { opacity: 0.9; }
+    .field-row {
+      background: #0b1329;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 10px;
+      margin-bottom: 8px;
+    }
+    .field-header {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.8rem;
+      margin-bottom: 4px;
+    }
+    .field-name { font-weight: 600; color: var(--accent); }
+    .field-val { font-size: 0.85rem; color: #fff; word-break: break-all; }
+    .field-norm { font-size: 0.75rem; color: var(--text-muted); margin-top: 2px; }
+    .action-btns {
+      display: flex;
+      gap: 6px;
+      margin-top: 8px;
+    }
+    .btn-accept { background: rgba(34, 197, 94, 0.2); color: var(--success); border: 1px solid var(--success); }
+    .btn-reject { background: rgba(239, 68, 68, 0.2); color: var(--danger); border: 1px solid var(--danger); }
+    .ocr-display {
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      background: #090d16;
+      padding: 12px;
+      border-radius: 6px;
+      white-space: pre-wrap;
+      border: 1px solid var(--border);
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1>BHUMI SETU — Document Ingestion & Evidence Review Pipeline</h1>
+      <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 4px;">
+        Phase 3 MVP Interface • Multi-Engine OCR & Epistemic Candidate Extraction
+      </div>
+    </div>
+    <div style="display: flex; gap: 8px; align-items: center;">
+      <span class="badge badge-success">POSTGRESQL 16 + POSTGIS</span>
+      <span class="badge badge-warning">EXTRACTION ≠ TRUTH</span>
+    </div>
+  </header>
+
+  <div class="grid">
+    <!-- PANEL 1: Upload & Document Selector -->
+    <div class="card">
+      <div class="card-title">1. Ingest Document</div>
+      <div class="form-group">
+        <label>Case ID</label>
+        <input type="text" id="caseId" placeholder="UUID or select active case" value="00000000-0000-0000-0000-000000000001">
+      </div>
+      <div class="form-group">
+        <label>Document Category</label>
+        <select id="docCategory">
+          <option value="SALE_DEED">Registered Sale Deed (बैनामा)</option>
+          <option value="KHATIYAN">Khatiyan Record (खतियान)</option>
+          <option value="JAMABANDI">Jamabandi Panji II (पंजी II)</option>
+          <option value="MUTATION_RECORD">Mutation Order Slip (दाखिल खारिज)</option>
+          <option value="ENCUMBRANCE_CERTIFICATE">Encumbrance Certificate (निरीक्षण प्रमाण पत्र)</option>
+          <option value="UNKNOWN">Auto-Classify via OCR</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Document File (PDF / Scanned Image)</label>
+        <input type="file" id="docFile" accept=".pdf,.png,.jpg,.jpeg">
+      </div>
+      <button id="uploadBtn">Upload & Ingest Document</button>
+
+      <hr style="border: 0; border-top: 1px solid var(--border); margin: 16px 0;">
+
+      <div class="card-title">Active Document Status</div>
+      <div id="statusBox" style="font-size: 0.8rem; color: var(--text-muted);">
+        No document active.
+      </div>
+    </div>
+
+    <!-- PANEL 2: Document Viewer & OCR Provenance -->
+    <div class="card">
+      <div class="card-title">
+        <span>2. Page Viewer & OCR Provenance</span>
+        <span id="pageCounter" class="badge">Page 1 / 1</span>
+      </div>
+      <div class="scroll-area">
+        <div style="margin-bottom: 8px; font-size: 0.8rem; color: var(--text-muted);">
+          Raw OCR Text & Coordinate Spans:
+        </div>
+        <div class="ocr-display" id="ocrDisplay">
+// Select or upload a document to view page OCR and evidence spans.
+        </div>
+      </div>
+    </div>
+
+    <!-- PANEL 3: Extraction Review & Candidate Claims -->
+    <div class="card">
+      <div class="card-title">
+        <span>3. Candidate Extractions & Claims</span>
+        <span id="fieldCountBadge" class="badge badge-warning">0 Fields</span>
+      </div>
+      <div class="scroll-area" id="extractionsContainer">
+        <div style="font-size: 0.8rem; color: var(--text-muted); text-align: center; padding: 20px;">
+          No candidate extractions loaded.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    console.log("BhumiSetu Document Viewer Initialized.");
+  </script>
+</body>
+</html>

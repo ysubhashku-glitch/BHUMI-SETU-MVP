@@ -1,0 +1,40 @@
+{
+  "source_url": "https://backend.landeed.com/api/v1/app_config/v2/feature_flags/",
+  "method": "GET",
+  "status": 200,
+  "server": "uvicorn",
+  "headers": {
+    "x-web-build": "0.75.7",
+    "platform": "Web",
+    "content-type": "application/json",
+    "x-trace-id": "2571238e1d6c993587619c075ab3ce90"
+  },
+  "data": {
+    "anr_show_voice_ai": false,
+    "anr_show_landeed_lens": false,
+    "anr_show_webview_pdf_viewer": true,
+    "default_login_otp_method": 1,
+    "app_bills_tab_enabled": false,
+    "kaushik_directline_enabled": false,
+    "show_webview_pdf_viewer": true,
+    "show_home_screen_search_bar": false,
+    "show_ap_ec_door_search": false,
+    "voice_agent_default_price": 99,
+    "use_routed_share_url": false,
+    "multi_doc_minimum_price": 199,
+    "search_bar_opens_terra": false,
+    "terra_is_fallback_enabled": false,
+    "show_terra_on_home_search_bar": false,
+    "show_home_search_bar": false,
+    "show_terra_on_home_search_send_cta": true,
+    "show_terra_on_home_search_secondary_cta": true,
+    "show_terra_on_home_search_no_result_help": false,
+    "show_foreground_notifications": true,
+    "show_terra_map_banner": true,
+    "show_terra_header_banners": true,
+    "customer_intent_submission_enabled": false,
+    "gs_price_extra_percent": 30,
+    "show_get_all_documents": false,
+    "show_terra_search_screen_banner_ot": true
+  }
+}

@@ -1,0 +1,39 @@
+# ==============================================================================
+# BhumiSetu Backend Git Ignore Rules (DevSecOps Hardened)
+# ==============================================================================
+
+# 1. Environment variables & secrets (CRITICAL: Never commit .env files)
+.env
+.env.*
+*.env
+!.env.example
+
+# 2. Python Virtual Environments and Builds
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info/
+.venv/
+.venv*/
+
+# 3. Local SQLite Databases & Test Artifacts
+*.db
+*.sqlite
+*.sqlite3
+test_*.db
+
+# 4. Test Caches and Coverage Reports
+.pytest_cache/
+.coverage
+htmlcov/
+
+# 5. Local Document Storage & Metadata
+storage/documents/*
+!storage/documents/.gitkeep
+storage/documents/.metadata/
+
+# 6. Runtime Logs
+logs/
+*.log

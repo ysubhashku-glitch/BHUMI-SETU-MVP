@@ -1,0 +1,1010 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BHUMI SETU — Master Architecture, Tech Stack, Execution Team & 5-Year Forecast</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  @page {
+    size: 297mm 167.06mm; /* Exact 16:9 widescreen landscape */
+    margin: 0;
+  }
+
+  *, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  body {
+    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background-color: #070A11;
+    color: #E2E8F0;
+    -webkit-font-smoothing: antialiased;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .slide {
+    width: 297mm;
+    height: 167.06mm;
+    page-break-after: always;
+    page-break-inside: avoid;
+    position: relative;
+    overflow: hidden;
+    background: radial-gradient(circle at 85% 15%, rgba(16, 185, 129, 0.15) 0%, rgba(7, 10, 17, 1) 70%),
+                radial-gradient(circle at 10% 90%, rgba(14, 165, 233, 0.12) 0%, rgba(7, 10, 17, 1) 60%),
+                #070A11;
+    padding: 14mm 18mm;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+
+  .slide-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    padding-bottom: 8px;
+    margin-bottom: 10px;
+  }
+
+  .slide-tag {
+    font-size: 9px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: #10B981;
+    background: rgba(16, 185, 129, 0.12);
+    padding: 3px 10px;
+    border-radius: 20px;
+    display: inline-block;
+    margin-bottom: 3px;
+    border: 1px solid rgba(16, 185, 129, 0.25);
+  }
+
+  .slide-title {
+    font-size: 22px;
+    font-weight: 800;
+    color: #FFFFFF;
+    letter-spacing: -0.5px;
+    line-height: 1.2;
+  }
+
+  .slide-subtitle {
+    font-size: 11px;
+    color: #94A3B8;
+    margin-top: 2px;
+  }
+
+  .brand-watermark {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .brand-logo-icon {
+    width: 22px;
+    height: 22px;
+    background: linear-gradient(135deg, #10B981, #0284C7);
+    border-radius: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 900;
+    font-size: 13px;
+  }
+
+  .brand-name {
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 1px;
+    color: #F8FAFC;
+  }
+
+  .slide-body {
+    flex: 1;
+    display: flex;
+    gap: 14px;
+    position: relative;
+    z-index: 2;
+  }
+
+  .slide-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 6px;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    font-size: 9px;
+    color: #64748B;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  /* Utility Grids */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; width: 100%; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; width: 100%; }
+  .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; width: 100%; }
+  .grid-5 { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; width: 100%; }
+  .grid-6 { display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(2, 1fr); gap: 10px; width: 100%; }
+
+  .card {
+    background: rgba(15, 21, 33, 0.85);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 10px;
+    padding: 12px;
+    backdrop-filter: blur(10px);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+
+  .card-highlight {
+    background: linear-gradient(145deg, rgba(16, 185, 129, 0.08), rgba(2, 132, 199, 0.08));
+    border: 1px solid rgba(16, 185, 129, 0.35);
+  }
+
+  .card-cyan {
+    background: linear-gradient(145deg, rgba(14, 165, 233, 0.08), rgba(99, 102, 241, 0.08));
+    border: 1px solid rgba(14, 165, 233, 0.35);
+  }
+
+  .card-purple {
+    background: linear-gradient(145deg, rgba(168, 85, 247, 0.08), rgba(236, 72, 153, 0.08));
+    border: 1px solid rgba(168, 85, 247, 0.35);
+  }
+
+  .card-danger {
+    background: rgba(239, 68, 68, 0.06);
+    border: 1px solid rgba(239, 68, 68, 0.25);
+  }
+
+  .metric-box {
+    text-align: center;
+    padding: 10px 8px;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 8px;
+  }
+
+  .metric-val {
+    font-size: 22px;
+    font-weight: 800;
+    color: #F8FAFC;
+    letter-spacing: -0.5px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .metric-val.emerald { color: #10B981; }
+  .metric-val.cyan { color: #06B6D4; }
+  .metric-val.amber { color: #F59E0B; }
+  .metric-val.purple { color: #C084FC; }
+  .metric-val.rose { color: #F43F5E; }
+
+  .metric-label {
+    font-size: 9px;
+    font-weight: 700;
+    color: #94A3B8;
+    margin-top: 3px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .feature-list {
+    list-style: none;
+    margin-top: 6px;
+  }
+
+  .feature-list li {
+    font-size: 10.5px;
+    color: #CBD5E1;
+    margin-bottom: 5px;
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+    line-height: 1.35;
+  }
+
+  .feature-list li::before {
+    content: "✓";
+    color: #10B981;
+    font-weight: bold;
+    flex-shrink: 0;
+  }
+
+  .deck-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 9.5px;
+    margin-top: 4px;
+  }
+
+  .deck-table th {
+    background: rgba(255, 255, 255, 0.05);
+    padding: 6px 8px;
+    text-align: left;
+    color: #94A3B8;
+    font-weight: 700;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .deck-table td {
+    padding: 5px 8px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    color: #E2E8F0;
+  }
+
+  .deck-table tr:hover {
+    background: rgba(255, 255, 255, 0.02);
+  }
+
+  .badge {
+    padding: 2px 6px;
+    border-radius: 10px;
+    font-size: 8.5px;
+    font-weight: 700;
+    display: inline-block;
+  }
+
+  .badge-success { background: rgba(16, 185, 129, 0.2); color: #34D399; }
+  .badge-warning { background: rgba(245, 158, 11, 0.2); color: #FBBF24; }
+  .badge-danger { background: rgba(239, 68, 68, 0.2); color: #F87171; }
+  .badge-info { background: rgba(59, 130, 246, 0.2); color: #60A5FA; }
+
+  /* Gradient Text */
+  .gradient-text {
+    background: linear-gradient(135deg, #10B981 0%, #38BDF8 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  /* Architectural flow boxes */
+  .arch-box {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+    padding: 8px 10px;
+  }
+
+  .arch-title {
+    font-size: 11px;
+    font-weight: 800;
+    color: #38BDF8;
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+</style>
+</head>
+<body>
+
+  <!-- ========================================== -->
+  <!-- SLIDE 1: COVER SLIDE & EXECUTIVE SUMMARY -->
+  <!-- ========================================== -->
+  <div class="slide">
+    <div class="brand-watermark">
+      <div class="brand-logo-icon">☗</div>
+      <div class="brand-name">BHUMI SETU</div>
+    </div>
+    
+    <div style="display: flex; flex-direction: column; justify-content: center; height: 100%; max-width: 88%;">
+      <div style="font-size: 11px; font-weight: 800; letter-spacing: 3px; color: #10B981; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); padding: 5px 12px; border-radius: 20px; display: inline-block; margin-bottom: 14px; width: fit-content;">
+        MASTER BLUEPRINT • COMPLETE ARCHITECTURE & 5-YEAR STRATEGIC FORECAST
+      </div>
+      <h1 style="font-size: 38px; font-weight: 900; color: #FFFFFF; letter-spacing: -1px; line-height: 1.1; margin-bottom: 10px;">
+        The <span class="gradient-text">Truth Layer</span> for Indian Land & Real Estate
+      </h1>
+      <p style="font-size: 14px; color: #94A3B8; line-height: 1.5; margin-bottom: 20px;">
+        Full-Stack Technology Architecture, Field Execution Network, PostGIS Spatial Engine, Organizational Hierarchy, and 2026–2030 Financial & Valuation Projections.
+      </p>
+
+      <div class="grid-4" style="border-top: 1px solid rgba(255, 255, 255, 0.1); padding-top: 14px;">
+        <div style="display: flex; flex-direction: column;">
+          <span style="font-size: 9px; text-transform: uppercase; color: #64748B; font-weight: 700;">Platform Category</span>
+          <span style="font-size: 12px; font-weight: 700; color: #F1F5F9; margin-top: 2px;">District Land OS & Spatial Graph</span>
+        </div>
+        <div style="display: flex; flex-direction: column;">
+          <span style="font-size: 9px; text-transform: uppercase; color: #64748B; font-weight: 700;">Core Wedge</span>
+          <span style="font-size: 12px; font-weight: 700; color: #10B981; margin-top: 2px;">Land Amin Field Engine + Land Passport</span>
+        </div>
+        <div style="display: flex; flex-direction: column;">
+          <span style="font-size: 9px; text-transform: uppercase; color: #64748B; font-weight: 700;">Launch Wedge</span>
+          <span style="font-size: 12px; font-weight: 700; color: #38BDF8; margin-top: 2px;">Deoghar & Banka Expansion Belt</span>
+        </div>
+        <div style="display: flex; flex-direction: column;">
+          <span style="font-size: 9px; text-transform: uppercase; color: #64748B; font-weight: 700;">5-Year Target (2030)</span>
+          <span style="font-size: 12px; font-weight: 700; color: #F59E0B; margin-top: 2px;">₹1,780 Cr Revenue ($214M ARR)</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="slide-footer">
+      <span>BHUMI SETU TECHNOLOGIES PVT. LTD.</span>
+      <span>CONFIDENTIAL — MASTER BLUEPRINT SPECIFICATION</span>
+      <span>SLIDE 01 / 08</span>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- SLIDE 2: COMPLETE TECHNOLOGY STACK -->
+  <!-- ========================================== -->
+  <div class="slide">
+    <div class="slide-header">
+      <div>
+        <span class="slide-tag">01 • TECHNOLOGY STACK</span>
+        <h2 class="slide-title">End-to-End Scalable Technology Architecture</h2>
+        <p class="slide-subtitle">Modern offline-first mobile PWA, high-concurrency microservices, PostGIS spatial database, and AI OCR pipeline.</p>
+      </div>
+      <div class="brand-watermark">
+        <div class="brand-logo-icon">☗</div>
+        <div class="brand-name">BHUMI SETU</div>
+      </div>
+    </div>
+
+    <div class="slide-body">
+      <div class="grid-4" style="height: 100%;">
+        <!-- Layer 1 -->
+        <div class="card card-highlight">
+          <div>
+            <div style="font-size: 20px; margin-bottom: 4px;">📱</div>
+            <h3 style="font-size: 13px; font-weight: 800; color: #10B981;">1. Client & Field PWA</h3>
+            <p style="font-size: 9.5px; color: #94A3B8; margin-bottom: 6px;">Offline-first mobile toolkit for field Amins & landowners.</p>
+          </div>
+          <ul class="feature-list">
+            <li><strong>Frontend:</strong> React 18, Vite, TypeScript, TailwindCSS</li>
+            <li><strong>Offline Storage:</strong> IndexedDB + Dexie.js (Sync queue)</li>
+            <li><strong>Hardware:</strong> HTML5 Geolocation, RTK-GPS Bluetooth SDK</li>
+            <li><strong>Mapping:</strong> Mapbox GL, Leaflet.js, OpenLayers vector tiles</li>
+            <li><strong>PDF Rendering:</strong> Puppeteer + PDFKit for Land Passports</li>
+          </ul>
+          <span class="badge badge-success">Sub-Meter Precision</span>
+        </div>
+
+        <!-- Layer 2 -->
+        <div class="card card-cyan">
+          <div>
+            <div style="font-size: 20px; margin-bottom: 4px;">⚡</div>
+            <h3 style="font-size: 13px; font-weight: 800; color: #38BDF8;">2. Backend & Risk Engine</h3>
+            <p style="font-size: 9.5px; color: #94A3B8; margin-bottom: 6px;">Deterministic 6-dimension risk & discrepancy services.</p>
+          </div>
+          <ul class="feature-list">
+            <li><strong>Runtime:</strong> Node.js (TypeScript) / Express & Fastify</li>
+            <li><strong>Discrepancy Engine:</strong> Shoelace planar & Geodesic math</li>
+            <li><strong>Regulatory Plugins:</strong> Jharkhand CNT/SPT & Bihar Tenancy Acts</li>
+            <li><strong>API Protocol:</strong> RESTful APIs + GraphQL + Webhooks for Banks</li>
+            <li><strong>Task Queue:</strong> BullMQ + Redis for async PDF & OCR generation</li>
+          </ul>
+          <span class="badge badge-info">100% Deterministic Risk</span>
+        </div>
+
+        <!-- Layer 3 -->
+        <div class="card card-purple">
+          <div>
+            <div style="font-size: 20px; margin-bottom: 4px;">🗄️</div>
+            <h3 style="font-size: 13px; font-weight: 800; color: #C084FC;">3. Spatial GIS & Graph DB</h3>
+            <p style="font-size: 9.5px; color: #94A3B8; margin-bottom: 6px;">Enterprise geospatial repository & property lineage graph.</p>
+          </div>
+          <ul class="feature-list">
+            <li><strong>Primary GIS:</strong> PostgreSQL 16 + PostGIS Spatial extension</li>
+            <li><strong>Spatial Querying:</strong> `ST_Area`, `ST_Intersects`, `ST_Buffer`</li>
+            <li><strong>Property Graph:</strong> Neo4j / AWS Neptune (Parcel-Owner-Deed)</li>
+            <li><strong>Document Vault:</strong> AWS S3 / Cloudflare R2 with SHA-256 integrity</li>
+            <li><strong>Caching:</strong> Redis cluster for sub-100ms portal lookups</li>
+          </ul>
+          <span class="badge" style="background: rgba(168, 85, 247, 0.2); color: #C084FC;">PostGIS Property Graph</span>
+        </div>
+
+        <!-- Layer 4 -->
+        <div class="card">
+          <div>
+            <div style="font-size: 20px; margin-bottom: 4px;">🛰️</div>
+            <h3 style="font-size: 13px; font-weight: 800; color: #F59E0B;">4. AI & Sentinel Layer</h3>
+            <p style="font-size: 9.5px; color: #94A3B8; margin-bottom: 6px;">Intelligent document extraction & satellite monitoring.</p>
+          </div>
+          <ul class="feature-list">
+            <li><strong>OCR Engine:</strong> Google Cloud Vision + PaddleOCR (Kaithi/Hindi)</li>
+            <li><strong>Deed Parser:</strong> Gemini Flash / LLM Chain-of-Title extraction</li>
+            <li><strong>Satellite Radar:</strong> Sentinel-2 & SAR imagery change detection</li>
+            <li><strong>Security:</strong> AES-256 encryption at rest, HMAC QR validation</li>
+            <li><strong>Infra:</strong> Docker, Kubernetes on GCP/AWS, Cloudflare CDN</li>
+          </ul>
+          <span class="badge badge-warning">AI Document Lineage</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="slide-footer">
+      <span>HIGH-CONCURRENCY ARCHITECTURE READY FOR PAN-INDIA SCALE</span>
+      <span>BHUMI SETU MASTER BLUEPRINT</span>
+      <span>SLIDE 02 / 08</span>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- SLIDE 3: SYSTEM ARCHITECTURE & DATA FLOW -->
+  <!-- ========================================== -->
+  <div class="slide">
+    <div class="slide-header">
+      <div>
+        <span class="slide-tag">02 • SYSTEM ARCHITECTURE</span>
+        <h2 class="slide-title">System Data Flow & Truth Delta Pipeline</h2>
+        <p class="slide-subtitle">How raw government records and field survey pins convert into a certified Land Passport node.</p>
+      </div>
+      <div class="brand-watermark">
+        <div class="brand-logo-icon">☗</div>
+        <div class="brand-name">BHUMI SETU</div>
+      </div>
+    </div>
+
+    <div class="slide-body">
+      <div style="flex: 1.2; display: flex; flex-direction: column; gap: 8px;">
+        <div class="card" style="padding: 10px;">
+          <h3 style="font-size: 12px; font-weight: 800; color: #FFFFFF; margin-bottom: 6px;">Data Processing Pipeline (End-to-End Lifecycle)</h3>
+          <div class="grid-4" style="gap: 8px;">
+            <div class="arch-box">
+              <div class="arch-title">STEP 1 • INGESTION</div>
+              <p style="font-size: 9px; color: #CBD5E1;">Extract Jamabandi, Khatiyan, registered deeds via instant portal sync & upload.</p>
+            </div>
+            <div class="arch-box">
+              <div class="arch-title">STEP 2 • FIELD SURVEY</div>
+              <p style="font-size: 9px; color: #CBD5E1;">Field Amin logs GPS pins (P1..P4), Chauhadri occupant verification, and road width.</p>
+            </div>
+            <div class="arch-box">
+              <div class="arch-title">STEP 3 • TRUTH DELTA</div>
+              <p style="font-size: 9px; color: #CBD5E1;">Calculate area delta ($\Delta_{area}$), boundary variance, and tribal CNT/SPT restrictions.</p>
+            </div>
+            <div class="arch-box">
+              <div class="arch-title">STEP 4 • PASSPORT</div>
+              <p style="font-size: 9px; color: #CBD5E1;">Generate tamper-evident Land Passport with QR code and publish to Property Graph.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid-2" style="flex: 1;">
+          <div class="card card-highlight">
+            <h4 style="font-size: 11px; font-weight: 800; color: #10B981;">Spatial Discrepancy Formulation</h4>
+            <div style="background: rgba(0,0,0,0.3); padding: 6px; border-radius: 6px; font-family: 'JetBrains Mono'; font-size: 9px; color: #34D399; margin: 4px 0;">
+              $$\Delta_{\text{area}} = \frac{\text{GPS Area} - \text{Deed Area}}{\text{Deed Area}} \times 100$$
+            </div>
+            <p style="font-size: 9px; color: #CBD5E1; line-height: 1.3;">
+              • $|\Delta| \le 4\% \implies$ Customary variance (Clean)<br>
+              • $4\% < |\Delta| \le 10\% \implies$ Warning (+15 Risk Score)<br>
+              • $|\Delta| > 10\% \implies$ Severe boundary deficit (+30 Risk Score)
+            </p>
+          </div>
+
+          <div class="card card-cyan">
+            <h4 style="font-size: 11px; font-weight: 800; color: #38BDF8;">The 6-Dimension Deterministic Risk Engine</h4>
+            <p style="font-size: 9px; color: #CBD5E1; line-height: 1.3;">
+              <strong>1. Title & Lineage:</strong> Sale deed vs Khatiyan chain match.<br>
+              <strong>2. Spatial Variance:</strong> Measured vs Jamabandi acre delta.<br>
+              <strong>3. Tenancy Laws:</strong> CNT/SPT Act tribal transfer restriction.<br>
+              <strong>4. Mutation Compliance:</strong> Dakhil Kharij + Lagan receipt audit.<br>
+              <strong>5. Physical Encroachment:</strong> Chauhadri ridge conflicts.<br>
+              <strong>6. Access & Litigation:</strong> Motorable road & CrPC 144 checks.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div style="flex: 0.8; display: flex; flex-direction: column; gap: 8px;">
+        <div class="card" style="flex: 1;">
+          <h4 style="font-size: 11px; font-weight: 800; color: #FFFFFF; margin-bottom: 4px;">PostGIS Property Node Data Model</h4>
+          <pre style="background: rgba(0,0,0,0.4); padding: 8px; border-radius: 6px; font-family: 'JetBrains Mono'; font-size: 8px; color: #93C5FD; overflow: hidden; line-height: 1.3;">
+{
+  "bhumiId": "BS-JH-DEO-000001",
+  "location": {
+    "state": "Jharkhand",
+    "district": "Deoghar",
+    "anchal": "Jasidih",
+    "khata": "42",
+    "khasra": "782"
+  },
+  "geometry": {
+    "type": "Polygon",
+    "coordinates": [[[86.684, 24.512], ...]]
+  },
+  "areaMetrics": {
+    "recordedAcres": 0.75,
+    "surveyedAcres": 0.741,
+    "variancePct": -1.2
+  },
+  "riskScore": 8,
+  "status": "CLEAN_VERIFIED"
+}
+          </pre>
+        </div>
+      </div>
+    </div>
+
+    <div class="slide-footer">
+      <span>RIGOROUS DETERMINISTIC TRUTH PIPELINE</span>
+      <span>BHUMI SETU MASTER BLUEPRINT</span>
+      <span>SLIDE 03 / 08</span>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- SLIDE 4: EXECUTION TEAM & ORG STRUCTURE -->
+  <!-- ========================================== -->
+  <div class="slide">
+    <div class="slide-header">
+      <div>
+        <span class="slide-tag">03 • EXECUTION TEAM</span>
+        <h2 class="slide-title">Organizational Hierarchy & Execution Engine</h2>
+        <p class="slide-subtitle">A balanced team uniting GIS technology, revenue field operations, revenue law, and institutional banking BD.</p>
+      </div>
+      <div class="brand-watermark">
+        <div class="brand-logo-icon">☗</div>
+        <div class="brand-name">BHUMI SETU</div>
+      </div>
+    </div>
+
+    <div class="slide-body">
+      <div class="grid-4" style="height: 100%;">
+        <!-- Pillar 1 -->
+        <div class="card">
+          <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 6px;">
+            <span style="font-size: 16px;">🏛️</span>
+            <div>
+              <h3 style="font-size: 12px; font-weight: 800; color: #FFFFFF;">Leadership & Strategy</h3>
+              <span style="font-size: 8.5px; color: #10B981; font-weight: 700;">Executive Suite</span>
+            </div>
+          </div>
+          <ul class="feature-list">
+            <li><strong>Chief Executive Officer (CEO):</strong> District expansion strategy, investor relations, state government liaison.</li>
+            <li><strong>Chief Technology Officer (CTO):</strong> PostGIS GIS architecture, AI OCR pipelines, offline PWA infrastructure.</li>
+            <li><strong>Head of Operations (COO):</strong> Anchal hubs rollout, Amin training academy, field SLA control room.</li>
+          </ul>
+        </div>
+
+        <!-- Pillar 2 -->
+        <div class="card card-cyan">
+          <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 6px;">
+            <span style="font-size: 16px;">💻</span>
+            <div>
+              <h3 style="font-size: 12px; font-weight: 800; color: #38BDF8;">Tech & GIS Engineering</h3>
+              <span style="font-size: 8.5px; color: #38BDF8; font-weight: 700;">Product Team (8 Eng)</span>
+            </div>
+          </div>
+          <ul class="feature-list">
+            <li><strong>Lead Spatial GIS Engineer:</strong> PostGIS database, cadastral raster georeferencing, sub-meter GPS math.</li>
+            <li><strong>Full-Stack Engineers (3):</strong> React PWA, Node.js microservices, GraphQL APIs for mortgage banks.</li>
+            <li><strong>AI / Computer Vision Lead:</strong> Multi-script document OCR (Kaithi/Hindi/English) & satellite change detection.</li>
+          </ul>
+        </div>
+
+        <!-- Pillar 3 -->
+        <div class="card card-highlight">
+          <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 6px;">
+            <span style="font-size: 16px;">📐</span>
+            <div>
+              <h3 style="font-size: 12px; font-weight: 800; color: #10B981;">Field & Anchal Ops</h3>
+              <span style="font-size: 8.5px; color: #10B981; font-weight: 700;">Ground Network</span>
+            </div>
+          </div>
+          <ul class="feature-list">
+            <li><strong>District Hub Managers:</strong> 1 Hub Lead per district managing quality control and equipment calibration.</li>
+            <li><strong>Certified Master Amins:</strong> Expert surveyors conducting complex partition & dispute demarcations.</li>
+            <li><strong>Partner Field Amins (50+):</strong> Licensed revenue surveyors executing on-demand GPS plots via PWA.</li>
+          </ul>
+        </div>
+
+        <!-- Pillar 4 -->
+        <div class="card card-purple">
+          <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 6px;">
+            <span style="font-size: 16px;">⚖️</span>
+            <div>
+              <h3 style="font-size: 12px; font-weight: 800; color: #C084FC;">Legal & Institutional BD</h3>
+              <span style="font-size: 8.5px; color: #C084FC; font-weight: 700;">Compliance & Enterprise</span>
+            </div>
+          </div>
+          <ul class="feature-list">
+            <li><strong>Chief Legal Counsel:</strong> Ex-Revenue Court Advocate specializing in CNT/SPT Acts and Title jurisprudence.</li>
+            <li><strong>Institutional BD Director:</strong> Banking partnerships (SBI, HDFC, RRBs, NBFCs) and solar/highway developers.</li>
+            <li><strong>Advocate Network Coordinator:</strong> Managing 250+ registry office deed writers and advocate referrals.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="slide-footer">
+      <span>HIGHLY DISCIPLINED FIELD & TECH EXECUTION HIERARCHY</span>
+      <span>BHUMI SETU MASTER BLUEPRINT</span>
+      <span>SLIDE 04 / 08</span>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- SLIDE 5: PILOT METRICS & WEDGE VALIDATION -->
+  <!-- ========================================== -->
+  <div class="slide">
+    <div class="slide-header">
+      <div>
+        <span class="slide-tag">04 • PILOT VALIDATION</span>
+        <h2 class="slide-title">Deoghar & Banka Corridor: Early Traction & Metrics</h2>
+        <p class="slide-subtitle">Empirical findings proving structural product-market fit and 65%+ gross margins in initial 5 Anchals.</p>
+      </div>
+      <div class="brand-watermark">
+        <div class="brand-logo-icon">☗</div>
+        <div class="brand-name">BHUMI SETU</div>
+      </div>
+    </div>
+
+    <div class="slide-body">
+      <div style="flex: 1; display: flex; flex-direction: column; gap: 8px;">
+        <div class="grid-4">
+          <div class="metric-box card-highlight">
+            <div class="metric-val emerald">500+</div>
+            <div class="metric-label">Properties Mapped</div>
+          </div>
+          <div class="metric-box card-cyan">
+            <div class="metric-val cyan">₹14.2L</div>
+            <div class="metric-label">Pilot Gross Revenue</div>
+          </div>
+          <div class="metric-box card-purple">
+            <div class="metric-val purple">18</div>
+            <div class="metric-label">Active Field Amins</div>
+          </div>
+          <div class="metric-box card-highlight">
+            <div class="metric-val emerald">99.6%</div>
+            <div class="metric-label">Dispute-Free Accuracy</div>
+          </div>
+        </div>
+
+        <div class="card" style="flex: 1; padding: 10px;">
+          <h4 style="font-size: 11px; font-weight: 800; color: #FFFFFF; margin-bottom: 4px;">Deoghar Wedge Empirical Case Study: Critical Ground Discoveries</h4>
+          <table class="deck-table">
+            <thead>
+              <tr>
+                <th>Discrepancy Category</th>
+                <th>Pilot Occurrence Rate</th>
+                <th>Root Cause Observed in Field</th>
+                <th>Bhumi Setu Remediation</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Area Deficit (> 5%)</strong></td>
+                <td><span class="badge badge-danger">42% of Parcels</span></td>
+                <td>Colonial chain shrinkage & unauthorized ridge encroachment over 30 yrs.</td>
+                <td>RTK-GPS Shoelace area computation attached to Land Passport.</td>
+              </tr>
+              <tr>
+                <td><strong>Mutation Unexecuted</strong></td>
+                <td><span class="badge badge-warning">28% of Cases</span></td>
+                <td>Unprobated succession lineage; Jamabandi standing in grandfather's name.</td>
+                <td>Automated Dakhil Kharij filing pipeline with Anchal Revenue Office.</td>
+              </tr>
+              <tr>
+                <td><strong>Tribal Tenancy Hazard</strong></td>
+                <td><span class="badge badge-danger">15% of Inquiries</span></td>
+                <td>Attempts to transfer SPT/CNT Act restricted land without DC permission.</td>
+                <td>Instant statutory block protecting buyers from total capital loss.</td>
+              </tr>
+              <tr>
+                <td><strong>Advocate Referral Loop</strong></td>
+                <td><span class="badge badge-success">60% Organic Acquisition</span></td>
+                <td>Local registry deed writers bundle Bhumi Setu as mandatory due diligence.</td>
+                <td>Zero-cost viral referral loop scaling each district hub rapidly.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="slide-footer">
+      <span>PROVEN PROFITABLE IN INITIAL URBANIZATION CORRIDOR</span>
+      <span>BHUMI SETU MASTER BLUEPRINT</span>
+      <span>SLIDE 05 / 08</span>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- SLIDE 6: 5-YEAR FINANCIAL FORECAST (2026–2030) -->
+  <!-- ========================================== -->
+  <div class="slide">
+    <div class="slide-header">
+      <div>
+        <span class="slide-tag">05 • FINANCIAL PROJECTIONS</span>
+        <h2 class="slide-title">5-Year Growth & Comprehensive P&L Forecast</h2>
+        <p class="slide-subtitle">Path from ₹2.03 Cr ($245K) Seed run-rate to ₹1,780 Cr ($214M ARR) market leadership by 2030.</p>
+      </div>
+      <div class="brand-watermark">
+        <div class="brand-logo-icon">☗</div>
+        <div class="brand-name">BHUMI SETU</div>
+      </div>
+    </div>
+
+    <div class="slide-body">
+      <div style="flex: 1.3;">
+        <table class="deck-table">
+          <thead>
+            <tr>
+              <th>Financial & Operational Metric</th>
+              <th>2026 (Yr 1)</th>
+              <th>2027 (Yr 2)</th>
+              <th>2028 (Yr 3)</th>
+              <th>2029 (Yr 4)</th>
+              <th style="background: rgba(16, 185, 129, 0.2); color: #34D399;">2030 (Yr 5)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Active Districts Covered</strong></td>
+              <td>2 Districts</td>
+              <td>15 Districts</td>
+              <td>50 Districts</td>
+              <td>120 Districts</td>
+              <td><strong>250+ Districts</strong></td>
+            </tr>
+            <tr>
+              <td><strong>Active Network Amins</strong></td>
+              <td>50</td>
+              <td>350</td>
+              <td>1,200</td>
+              <td>3,200</td>
+              <td><strong>6,500 Amins</strong></td>
+            </tr>
+            <tr>
+              <td><strong>Land Passports Issued / Yr</strong></td>
+              <td>2,500</td>
+              <td>30,000</td>
+              <td>150,000</td>
+              <td>500,000</td>
+              <td><strong>1,500,000</strong></td>
+            </tr>
+            <tr>
+              <td><strong>B2B Bank API Queries / Yr</strong></td>
+              <td>5,000</td>
+              <td>80,000</td>
+              <td>500,000</td>
+              <td>2,200,000</td>
+              <td><strong>7,500,000</strong></td>
+            </tr>
+            <tr style="border-top: 2px solid rgba(255,255,255,0.1);">
+              <td><strong>B2C Field Survey Revenue</strong></td>
+              <td>₹1.62 Cr</td>
+              <td>₹19.50 Cr</td>
+              <td>₹97.50 Cr</td>
+              <td>₹325.00 Cr</td>
+              <td><strong>₹975.00 Cr</strong></td>
+            </tr>
+            <tr>
+              <td><strong>B2B Bank Diligence & SaaS</strong></td>
+              <td>₹0.15 Cr</td>
+              <td>₹6.40 Cr</td>
+              <td>₹42.50 Cr</td>
+              <td>₹176.00 Cr</td>
+              <td><strong>₹585.00 Cr</strong></td>
+            </tr>
+            <tr>
+              <td><strong>Enterprise Infra OS Bundles</strong></td>
+              <td>₹0.26 Cr</td>
+              <td>₹3.90 Cr</td>
+              <td>₹22.75 Cr</td>
+              <td>₹78.00 Cr</td>
+              <td><strong>₹220.00 Cr</strong></td>
+            </tr>
+            <tr style="background: rgba(255,255,255,0.04); font-weight: 800;">
+              <td><span class="gradient-text">TOTAL REVENUE (INR Cr)</span></td>
+              <td><strong>₹2.03 Cr</strong></td>
+              <td><strong>₹29.80 Cr</strong></td>
+              <td><strong>₹162.75 Cr</strong></td>
+              <td><strong>₹579.00 Cr</strong></td>
+              <td style="color: #34D399;"><strong>₹1,780.00 Cr</strong></td>
+            </tr>
+            <tr>
+              <td><strong>Total Revenue ($ USD)</strong></td>
+              <td>$245K</td>
+              <td>$3.6M</td>
+              <td>$19.6M</td>
+              <td>$69.7M</td>
+              <td style="color: #34D399;"><strong>$214.5M</strong></td>
+            </tr>
+            <tr>
+              <td><strong>Blended Gross Margin (%)</strong></td>
+              <td>69.5%</td>
+              <td>73.8%</td>
+              <td>76.9%</td>
+              <td>79.6%</td>
+              <td><strong>81.7%</strong></td>
+            </tr>
+            <tr style="font-weight: 700;">
+              <td><strong>EBITDA (INR Cr)</strong></td>
+              <td style="color: #F87171;">-₹0.59 Cr</td>
+              <td style="color: #34D399;">₹9.30 Cr</td>
+              <td style="color: #34D399;">₹72.25 Cr</td>
+              <td style="color: #34D399;">₹311.00 Cr</td>
+              <td style="color: #34D399;"><strong>₹1,075.00 Cr</strong></td>
+            </tr>
+            <tr>
+              <td><strong>EBITDA Margin (%)</strong></td>
+              <td>-29.0%</td>
+              <td>31.2%</td>
+              <td>44.4%</td>
+              <td>53.7%</td>
+              <td><strong>60.4%</strong></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div style="flex: 0.7; display: flex; flex-direction: column; gap: 8px;">
+        <div class="card card-highlight">
+          <h4 style="font-size: 11px; font-weight: 800; color: #10B981;">Key Financial Insights</h4>
+          <ul class="feature-list">
+            <li><strong>Near-Zero CAC:</strong> Registry advocate loops deliver 60%+ organic referral customer volume.</li>
+            <li><strong>Margin Expansion:</strong> B2B API queries grow from 7% of revenue in Yr 1 to 33% in Yr 5, pushing gross margins past 81%.</li>
+            <li><strong>High Capital Efficiency:</strong> Break-even achieved in Year 2 with strong positive cash flows.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="slide-footer">
+      <span>COMPOUNDING HIGH-MARGIN B2B AND B2C REVENUE MODEL</span>
+      <span>BHUMI SETU MASTER BLUEPRINT</span>
+      <span>SLIDE 06 / 08</span>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- SLIDE 7: DISTRICT EXPANSION PLAYBOOK -->
+  <!-- ========================================== -->
+  <div class="slide">
+    <div class="slide-header">
+      <div>
+        <span class="slide-tag">06 • SCALING PLAYBOOK</span>
+        <h2 class="slide-title">Repeatable District Expansion Machine</h2>
+        <p class="slide-subtitle">A proven 4-week playbook to launch, staff, and monetize new high-growth district hubs.</p>
+      </div>
+      <div class="brand-watermark">
+        <div class="brand-logo-icon">☗</div>
+        <div class="brand-name">BHUMI SETU</div>
+      </div>
+    </div>
+
+    <div class="slide-body">
+      <div class="grid-4" style="height: 100%;">
+        <div class="card">
+          <div style="font-size: 18px; color: #10B981; font-weight: 900;">WEEK 1</div>
+          <h3 style="font-size: 12px; font-weight: 800; color: #FFFFFF; margin: 3px 0;">Anchal Mapping & Data Ingestion</h3>
+          <p style="font-size: 9.5px; color: #94A3B8; margin-bottom: 6px;">Sync local Anchal Record Room sheets, Cadastral rasters, and JharBhoomi/BiharBhumi circle indexes.</p>
+          <ul class="feature-list">
+            <li>Georeference Cadastral Map Sheets</li>
+            <li>Map Thana & Mauza boundaries</li>
+            <li>Configure Circle-specific circle rates</li>
+          </ul>
+        </div>
+
+        <div class="card card-cyan">
+          <div style="font-size: 18px; color: #38BDF8; font-weight: 900;">WEEK 2</div>
+          <h3 style="font-size: 12px; font-weight: 800; color: #FFFFFF; margin: 3px 0;">Amin Recruitment & Certification</h3>
+          <p style="font-size: 9.5px; color: #94A3B8; margin-bottom: 6px;">Onboard 20–30 local government-licensed Amins via our BhumiSetu Training Academy.</p>
+          <ul class="feature-list">
+            <li>RTK-GPS device calibration training</li>
+            <li>Mobile PWA pin plotting certification</li>
+            <li>2.4x income guarantee rollout</li>
+          </ul>
+        </div>
+
+        <div class="card card-purple">
+          <div style="font-size: 18px; color: #C084FC; font-weight: 900;">WEEK 3</div>
+          <h3 style="font-size: 12px; font-weight: 800; color: #FFFFFF; margin: 3px 0;">Legal Referral Ecosystem</h3>
+          <p style="font-size: 9.5px; color: #94A3B8; margin-bottom: 6px;">Sign agreements with District Bar Association Advocates & Deed Writers (Katibs).</p>
+          <ul class="feature-list">
+            <li>Distribute Advocate Due Diligence Kits</li>
+            <li>Launch 10% referral partner incentives</li>
+            <li>Set up Sub-Registrar Office helpdesks</li>
+          </ul>
+        </div>
+
+        <div class="card card-highlight">
+          <div style="font-size: 18px; color: #10B981; font-weight: 900;">WEEK 4</div>
+          <h3 style="font-size: 12px; font-weight: 800; color: #FFFFFF; margin: 3px 0;">Live Operations & Bank Pilot</h3>
+          <p style="font-size: 9.5px; color: #94A3B8; margin-bottom: 6px;">Full commercial activation, processing 100+ weekly field surveys with sub-48hr SLA.</p>
+          <ul class="feature-list">
+            <li>Activate Ops Kanban control room</li>
+            <li>Onboard local RRB & NBFC branches</li>
+            <li>Achieve cashflow positivity by Month 2</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="slide-footer">
+      <span>STANDARDIZED PLAYBOOK ENABLING 15+ DISTRICT LAUNCHES PER YEAR</span>
+      <span>BHUMI SETU MASTER BLUEPRINT</span>
+      <span>SLIDE 07 / 08</span>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- SLIDE 8: SUMMARY & INVESTMENT ASK -->
+  <!-- ========================================== -->
+  <div class="slide">
+    <div class="slide-header">
+      <div>
+        <span class="slide-tag">07 • INVESTMENT & VISION</span>
+        <h2 class="slide-title">Seed Capital Allocation & 2030 Vision</h2>
+        <p class="slide-subtitle">Unlocking $200B+ in locked real estate capital across India's fastest-growing districts.</p>
+      </div>
+      <div class="brand-watermark">
+        <div class="brand-logo-icon">☗</div>
+        <div class="brand-name">BHUMI SETU</div>
+      </div>
+    </div>
+
+    <div class="slide-body">
+      <div style="flex: 1.1; display: flex; flex-direction: column; gap: 8px;">
+        <h3 style="font-size: 12px; font-weight: 800; color: #FFFFFF;">Seed Round: $1.2M (₹10.0 Crore) Use of Funds</h3>
+        <div class="grid-2">
+          <div class="card" style="padding: 8px 10px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span style="font-size: 11px; font-weight: 800; color: #10B981;">District Expansion (45%)</span>
+              <span style="font-size: 12px; font-weight: 800; font-family: 'JetBrains Mono'; color: #FFFFFF;">₹4.50 Cr</span>
+            </div>
+            <p style="font-size: 9px; color: #94A3B8; margin-top: 2px;">Launch 15 district hubs, onboard 500+ Amins, and establish Sub-Registrar referral loops.</p>
+          </div>
+
+          <div class="card" style="padding: 8px 10px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span style="font-size: 11px; font-weight: 800; color: #38BDF8;">Tech & Spatial GIS (30%)</span>
+              <span style="font-size: 12px; font-weight: 800; font-family: 'JetBrains Mono'; color: #FFFFFF;">₹3.00 Cr</span>
+            </div>
+            <p style="font-size: 9px; color: #94A3B8; margin-top: 2px;">PostGIS graph scaling, automated AI OCR for Kaithi/Hindi deeds, and Bank underwriting APIs.</p>
+          </div>
+
+          <div class="card" style="padding: 8px 10px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span style="font-size: 11px; font-weight: 800; color: #F59E0B;">Institutional BD & Sales (15%)</span>
+              <span style="font-size: 12px; font-weight: 800; font-family: 'JetBrains Mono'; color: #FFFFFF;">₹1.50 Cr</span>
+            </div>
+            <p style="font-size: 9px; color: #94A3B8; margin-top: 2px;">Enterprise sales force closing mortgage underwriting contracts with Banks and Infrastructure firms.</p>
+          </div>
+
+          <div class="card" style="padding: 8px 10px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span style="font-size: 11px; font-weight: 800; color: #C084FC;">Legal & Compliance (10%)</span>
+              <span style="font-size: 12px; font-weight: 800; font-family: 'JetBrains Mono'; color: #FFFFFF;">₹1.00 Cr</span>
+            </div>
+            <p style="font-size: 9px; color: #94A3B8; margin-top: 2px;">Tenancy Act rule codification, ISO/IEC 27001 data governance, and legal defense reserves.</p>
+          </div>
+        </div>
+      </div>
+
+      <div style="flex: 0.9; display: flex; flex-direction: column; justify-content: space-between;">
+        <div class="card card-highlight" style="padding: 14px; text-align: center; height: 100%; display: flex; flex-direction: column; justify-content: center;">
+          <div style="font-size: 26px; margin-bottom: 4px;">🤝</div>
+          <h3 style="font-size: 15px; font-weight: 900; color: #FFFFFF;">Transforming India's Land Economy</h3>
+          <p style="font-size: 10px; color: #CBD5E1; margin: 6px 0 10px 0; line-height: 1.4;">
+            Establishing the permanent digital infrastructure and property graph for 1.4 Billion citizens and unlocking $200B+ in frozen national wealth.
+          </p>
+          <div style="background: rgba(255, 255, 255, 0.05); padding: 8px; border-radius: 6px; font-size: 9.5px; color: #94A3B8; font-family: 'JetBrains Mono';">
+            <div><strong>HQ:</strong> Deoghar, Jharkhand & Ranchi</div>
+            <div style="margin-top: 2px;"><strong>Contact:</strong> founders@bhumisetu.in | www.bhumisetu.in</div>
+            <div style="margin-top: 2px; color: #10B981;"><strong>Entity:</strong> Growth Stack Pvt. Ltd. / Bhumi Setu</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="slide-footer">
+      <span>BHUMI SETU TECHNOLOGIES PVT. LTD. • CONFIDENTIAL</span>
+      <span>MASTER BLUEPRINT 2026–2030</span>
+      <span>SLIDE 08 / 08</span>
+    </div>
+  </div>
+
+</body>
+</html>

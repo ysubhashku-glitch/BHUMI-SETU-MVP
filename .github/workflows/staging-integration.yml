@@ -1,0 +1,280 @@
+name: Staging Container Integration & Readiness Validation
+
+on:
+  push:
+    branches: [ main, staging ]
+  pull_request:
+    branches: [ main, staging ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  staging-integration-validation:
+    name: Containerized Staging Integration (Docker Compose, PostGIS, Redis, MinIO)
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      # ------------------------------------------------------------------------
+      # 1. Checkout Repository
+      # ------------------------------------------------------------------------
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      # ------------------------------------------------------------------------
+      # 2. Setup Python & Astral uv
+      # ------------------------------------------------------------------------
+      - name: Install Astral uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          version: "0.12.5"
+
+      - name: Set up Python 3.14
+        run: uv python install 3.14
+
+      # ------------------------------------------------------------------------
+      # 3. Host Preflight Unit & Regression Suite Gate
+      # ------------------------------------------------------------------------
+      - name: Run Backend Regression Suite on Host
+        working-directory: ./backend
+        env:
+          PYTHONPATH: .
+        run: |
+          uv sync --frozen --no-install-project
+          uv run pytest tests -q
+
+      # ------------------------------------------------------------------------
+      # 4. Generate Disposable Temporary CI-Only Credentials
+      # ------------------------------------------------------------------------
+      - name: Generate Disposable CI Credentials & Populate backend/.env
+        run: |
+          CI_SECRET=$(openssl rand -hex 32)
+          CI_DB_PASS=$(openssl rand -hex 24)
+          CI_MINIO_PASS=$(openssl rand -hex 24)
+
+          # Mask secrets in GitHub Actions logs
+          echo "::add-mask::$CI_SECRET"
+          echo "::add-mask::$CI_DB_PASS"
+          echo "::add-mask::$CI_MINIO_PASS"
+
+          cat <<EOF > backend/.env
+          ENVIRONMENT=staging
+          DEBUG=false
+          PROJECT_NAME="BhumiSetu Land Intelligence Platform (CI Staging)"
+          ALLOWED_ORIGINS="http://localhost:3000,http://127.0.0.1:3000,https://staging.bhumisetu.gov.in"
+
+          POSTGRES_USER=bhumisetu_user
+          POSTGRES_PASSWORD=${CI_DB_PASS}
+          POSTGRES_DB=bhumisetu_db
+          DATABASE_URL=postgresql+psycopg://bhumisetu_user:${CI_DB_PASS}@db:5432/bhumisetu_db
+
+          SECRET_KEY=${CI_SECRET}
+
+          STORAGE_ADAPTER=minio
+          AWS_S3_BUCKET=bhumisetu-staging-evidence-vault
+          MINIO_ROOT_USER=minioadmin
+          MINIO_ROOT_PASSWORD=${CI_MINIO_PASS}
+          AWS_ACCESS_KEY_ID=minioadmin
+          AWS_SECRET_ACCESS_KEY=${CI_MINIO_PASS}
+          S3_ENDPOINT_URL=http://minio:9000
+          S3_USE_SSL=false
+          MINIO_DEDICATED_APP_IDENTITY=false
+
+          REDIS_URL=redis://redis:6379/0
+          CELERY_BROKER_URL=redis://redis:6379/0
+          CELERY_RESULT_BACKEND=redis://redis:6379/1
+          ASYNC_PROCESSING=true
+          PUBLIC_BASE_URL=https://staging.bhumisetu.gov.in
+          EOF
+
+          chmod 600 backend/.env
+          echo "[OK] Temporary CI environment configuration provisioned and permissions restricted."
+
+      # ------------------------------------------------------------------------
+      # 5. Preflight Configuration & Credential Consistency Validator
+      # ------------------------------------------------------------------------
+      - name: Validate Generated Configuration and Credential Consistency
+        working-directory: ./backend
+        env:
+          PYTHONPATH: .
+        run: |
+          uv run python -m scripts.verify_config --env-file .env
+          echo "[OK] Preflight configuration validator passed with zero errors or credential leaks."
+
+      # ------------------------------------------------------------------------
+      # 6. Render and Validate Compose Configuration
+      # ------------------------------------------------------------------------
+      - name: Validate Staging Docker Compose Configuration
+        run: |
+          docker compose -f docker-compose.staging.yml --env-file backend/.env config --quiet
+          echo "[OK] Docker Compose configuration validated without variable errors."
+
+      # ------------------------------------------------------------------------
+      # 7. Build Application & Worker Container Images
+      # ------------------------------------------------------------------------
+      - name: Build Application and Worker Container Image
+        run: |
+          docker compose -f docker-compose.staging.yml --env-file backend/.env build
+
+      # ------------------------------------------------------------------------
+      # 8. Start Infrastructure Services (PostgreSQL, Redis, MinIO)
+      # ------------------------------------------------------------------------
+      - name: Start Infrastructure Services (db, redis, minio)
+        run: |
+          docker compose -f docker-compose.staging.yml --env-file backend/.env up -d db redis minio
+
+      # ------------------------------------------------------------------------
+      # 9. Bounded Wait for Infrastructure Health
+      # ------------------------------------------------------------------------
+      - name: Wait for Infrastructure Services Readiness
+        run: |
+          echo "Waiting for PostgreSQL/PostGIS, Redis, and MinIO containers to pass health checks..."
+          TIMEOUT=60
+          ELAPSED=0
+          until [ $ELAPSED -ge $TIMEOUT ]; do
+            DB_HEALTH=$(docker inspect --format='{{.State.Health.Status}}' bhumisetu_staging_db 2>/dev/null || echo "starting")
+            REDIS_HEALTH=$(docker inspect --format='{{.State.Health.Status}}' bhumisetu_staging_redis 2>/dev/null || echo "starting")
+            MINIO_HEALTH=$(docker inspect --format='{{.State.Health.Status}}' bhumisetu_staging_minio 2>/dev/null || echo "starting")
+
+            if [ "$DB_HEALTH" = "healthy" ] && [ "$REDIS_HEALTH" = "healthy" ] && [ "$MINIO_HEALTH" = "healthy" ]; then
+              echo "[OK] All infrastructure services healthy after ${ELAPSED}s."
+              break
+            fi
+            sleep 3
+            ELAPSED=$((ELAPSED + 3))
+          done
+
+          if [ $ELAPSED -ge $TIMEOUT ]; then
+            echo "[ERROR] Infrastructure services timed out waiting for health."
+            docker compose -f docker-compose.staging.yml ps
+            exit 1
+          fi
+
+      # ------------------------------------------------------------------------
+      # 10. Execute Database Migrations
+      # ------------------------------------------------------------------------
+      - name: Execute Controlled Database Migrations
+        run: |
+          echo "Executing Alembic migrations inside container network..."
+          docker compose -f docker-compose.staging.yml --env-file backend/.env run --rm app python -m scripts.migrate upgrade
+          echo "Verifying migration head status..."
+          docker compose -f docker-compose.staging.yml --env-file backend/.env run --rm app python -m scripts.migrate check
+          echo "[OK] Migrations applied and confirmed at head."
+
+      # ------------------------------------------------------------------------
+      # 11. Start Application and Celery Worker Services
+      # ------------------------------------------------------------------------
+      - name: Start Application and Worker Services
+        run: |
+          docker compose -f docker-compose.staging.yml --env-file backend/.env up -d app worker
+
+      # ------------------------------------------------------------------------
+      # 12. Bounded Wait for Application Readiness
+      # ------------------------------------------------------------------------
+      - name: Verify Application Readiness Probe (/health/ready)
+        run: |
+          echo "Waiting for Application container readiness probe (/health/ready)..."
+          TIMEOUT=60
+          ELAPSED=0
+          until [ $ELAPSED -ge $TIMEOUT ]; do
+            HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:8000/health/ready || echo "000")
+            if [ "$HTTP_STATUS" = "200" ]; then
+              echo "[OK] Application reported HTTP 200 READY after ${ELAPSED}s."
+              break
+            fi
+            sleep 3
+            ELAPSED=$((ELAPSED + 3))
+          done
+
+          if [ $ELAPSED -ge $TIMEOUT ]; then
+            echo "[ERROR] Application failed to report ready within ${TIMEOUT}s. (Last HTTP status: $HTTP_STATUS)"
+            curl -v http://127.0.0.1:8000/health/ready || true
+            exit 1
+          fi
+
+      # ------------------------------------------------------------------------
+      # 13. Run Live Containerized Integration Tests
+      # ------------------------------------------------------------------------
+      - name: Execute Live Containerized Staging Integration Tests
+        run: |
+          echo "Executing test_containerized_staging_integration.py against live stack..."
+          docker compose -f docker-compose.staging.yml --env-file backend/.env run --rm \
+            -e TEST_LIVE_STAGING=1 \
+            -e STAGING_APP_URL="http://app:8000" \
+            app pytest tests/test_containerized_staging_integration.py -v
+
+      # ------------------------------------------------------------------------
+      # 14. Run End-to-End Staging Smoke Test
+      # ------------------------------------------------------------------------
+      - name: Execute 18-Step Staging End-to-End Smoke Test
+        run: |
+          docker compose -f docker-compose.staging.yml --env-file backend/.env run --rm \
+            app pytest tests/test_staging_smoke.py -v
+
+      # ------------------------------------------------------------------------
+      # 15. Verify Real Data Persistence Across Container Restart
+      # ------------------------------------------------------------------------
+      - name: Verify Database and Storage State Persistence Across Restart
+        run: |
+          echo "1. Seeding identifiable persistence markers into PostgreSQL and MinIO..."
+          docker compose -f docker-compose.staging.yml --env-file backend/.env run --rm \
+            app python -m scripts.verify_persistence seed
+
+          echo "2. Restarting PostgreSQL, MinIO, App, and Worker containers to test volume durability..."
+          docker compose -f docker-compose.staging.yml --env-file backend/.env restart db minio app worker
+
+          echo "3. Waiting for application to report ready after restart..."
+          TIMEOUT=60
+          ELAPSED=0
+          until [ $ELAPSED -ge $TIMEOUT ]; do
+            HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:8000/health/ready || echo "000")
+            if [ "$HTTP_STATUS" = "200" ]; then
+              echo "[OK] Application re-established HTTP 200 READY after restart (${ELAPSED}s)."
+              break
+            fi
+            sleep 3
+            ELAPSED=$((ELAPSED + 3))
+          done
+
+          if [ $ELAPSED -ge $TIMEOUT ]; then
+            echo "[ERROR] Application failed to report ready after restart."
+            exit 1
+          fi
+
+          echo "4. Verifying persistence markers survived restart intact..."
+          docker compose -f docker-compose.staging.yml --env-file backend/.env run --rm \
+            app python -m scripts.verify_persistence verify
+          echo "[OK] Real state persistence verified across container restart."
+
+      # ------------------------------------------------------------------------
+      # 16. Collect Sanitized Diagnostic Logs on Failure
+      # ------------------------------------------------------------------------
+      - name: Collect Sanitized Logs on Failure
+        if: failure()
+        run: |
+          echo "=== DIAGNOSTIC LOG COLLECTION (FAILURE DETECTED) ==="
+          docker compose -f docker-compose.staging.yml ps
+          echo "--- DB Container Logs ---"
+          docker compose -f docker-compose.staging.yml logs db --tail=50
+          echo "--- Redis Container Logs ---"
+          docker compose -f docker-compose.staging.yml logs redis --tail=30
+          echo "--- MinIO Container Logs ---"
+          docker compose -f docker-compose.staging.yml logs minio --tail=30
+          echo "--- App Container Logs ---"
+          docker compose -f docker-compose.staging.yml logs app --tail=50
+          echo "--- Worker Container Logs ---"
+          docker compose -f docker-compose.staging.yml logs worker --tail=50
+
+      # ------------------------------------------------------------------------
+      # 17. Teardown Disposable CI Services
+      # ------------------------------------------------------------------------
+      - name: Teardown Disposable CI Containers & Volumes
+        if: always()
+        run: |
+          echo "Shutting down disposable CI staging stack and removing ephemeral test volumes..."
+          docker compose -f docker-compose.staging.yml down -v --remove-orphans
+          rm -f backend/.env
+          echo "[OK] CI resources cleanly removed."
