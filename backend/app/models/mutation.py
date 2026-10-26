@@ -115,6 +115,7 @@ class MutationCase(Base):
     case_number = sa.Column(sa.String(64), nullable=False, index=True) # e.g. "MUT-2024-25/DAN/1429"
     source_case_no = sa.Column(sa.String(64), nullable=True)          # e.g. "1429/2024-2025"
     financial_year = sa.Column(sa.String(16), nullable=False, default="2024-2025")
+    filing_year = sa.Column(sa.Integer, nullable=True, default=2024)
 
     # Administrative Jurisdiction
     district = sa.Column(sa.String(64), nullable=False, index=True)
@@ -167,6 +168,16 @@ class MutationCase(Base):
     events = relationship("MutationEvent", back_populates="mutation_case", cascade="all, delete-orphan", order_by="MutationEvent.event_date.asc()")
     documents = relationship("MutationDocument", back_populates="mutation_case", cascade="all, delete-orphan")
     entity_resolutions = relationship("MutationEntityResolution", back_populates="mutation_case", cascade="all, delete-orphan")
+
+    def __init__(self, **kwargs):
+        if "filing_year" in kwargs:
+            fy = kwargs["filing_year"]
+            if "financial_year" not in kwargs:
+                try:
+                    kwargs["financial_year"] = f"{int(fy)}-{int(fy)+1}"
+                except Exception:
+                    kwargs["financial_year"] = str(fy)
+        super().__init__(**kwargs)
 
 
 

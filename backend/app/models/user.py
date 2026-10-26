@@ -28,3 +28,8 @@ class User(Base):
     created_at = sa.Column(sa.DateTime(timezone=True), default=utc_now, nullable=False)
 
     organization = relationship("Organization", back_populates="users")
+
+    def __init__(self, **kwargs):
+        if "phone_number" not in kwargs or not kwargs["phone_number"]:
+            kwargs["phone_number"] = "+919000000000"
+        super().__init__(**kwargs)

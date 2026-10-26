@@ -5,8 +5,8 @@ parcel-to-case matches, and operator review structures.
 """
 
 import uuid
-from typing import List, Dict, Any, Optional
-from datetime import datetime
+from typing import List, Dict, Any, Optional, Union
+from datetime import datetime, date
 from pydantic import BaseModel, Field, ConfigDict
 
 EPISTEMIC_JUDICIAL_DISCLAIMER = (
@@ -18,7 +18,7 @@ EPISTEMIC_JUDICIAL_DISCLAIMER = (
 )
 
 class JudicialCaseRecord(BaseModel):
-    case_id: Optional[str] = None
+    case_id: Optional[Union[str, uuid.UUID]] = None
     cnr_number: str
     court_name: str
     court_type: str = "DISTRICT_COURT"
@@ -27,8 +27,8 @@ class JudicialCaseRecord(BaseModel):
     case_type: str
     case_number: str
     filing_year: int
-    filing_date: Optional[datetime] = None
-    registration_date: Optional[datetime] = None
+    filing_date: Optional[Union[datetime, date]] = None
+    registration_date: Optional[Union[datetime, date]] = None
     case_status: str = "PENDING"
     stage_of_case: Optional[str] = None
     petitioner_names: List[str] = Field(default_factory=list)
@@ -43,17 +43,17 @@ class JudicialCaseRecord(BaseModel):
     risk_category: str = "OTHER"
     source_url: Optional[str] = None
     source_provider: str = "MANUAL_IMPORT"
-    retrieval_timestamp: Optional[datetime] = None
-    evidence_id: Optional[str] = None
+    retrieval_timestamp: Optional[Union[datetime, date]] = None
+    evidence_id: Optional[Union[str, uuid.UUID]] = None
 
     model_config = ConfigDict(from_attributes=True)
 
 
 class ParcelJudicialMatchResponse(BaseModel):
-    match_id: str
-    case_id: str
-    parcel_id: str
-    judicial_case_id: str
+    match_id: Union[str, uuid.UUID]
+    case_id: Union[str, uuid.UUID]
+    parcel_id: Union[str, uuid.UUID]
+    judicial_case_id: Union[str, uuid.UUID]
     cnr_number: str
     court_name: str
     case_type: str
@@ -67,10 +67,10 @@ class ParcelJudicialMatchResponse(BaseModel):
     matching_method: str
     explanation: str
     review_status: str
-    reviewed_by_user_id: Optional[str] = None
-    reviewed_at: Optional[datetime] = None
+    reviewed_by_user_id: Optional[Union[str, uuid.UUID]] = None
+    reviewed_at: Optional[Union[datetime, date]] = None
     review_notes: Optional[str] = None
-    created_at: datetime
+    created_at: Union[datetime, date]
     epistemic_notice: str = EPISTEMIC_JUDICIAL_DISCLAIMER
 
     model_config = ConfigDict(from_attributes=True)

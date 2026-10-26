@@ -47,6 +47,7 @@ class Parcel(Base):
     district = synonym("district_name")
     circle = synonym("subdistrict_anchal_name")
     anchal = synonym("subdistrict_anchal_name")
+    subdistrict_anchal = synonym("subdistrict_anchal_name")
     mauza = synonym("mauza_village_name")
     khesra_number = synonym("plot_khesra_number")
     recorded_area_acre = synonym("recorded_area_acres")
@@ -77,6 +78,9 @@ class Parcel(Base):
         if "district_name" not in kwargs:
             kwargs["district_name"] = "UNKNOWN"
 
+        if "subdistrict_anchal" in kwargs and "subdistrict_anchal_name" not in kwargs:
+            kwargs["subdistrict_anchal_name"] = kwargs.pop("subdistrict_anchal")
+
         if "subdistrict_anchal_name" not in kwargs:
             if "circle" in kwargs:
                 kwargs["subdistrict_anchal_name"] = kwargs.pop("circle")
@@ -87,6 +91,7 @@ class Parcel(Base):
         else:
             kwargs.pop("circle", None)
             kwargs.pop("anchal", None)
+            kwargs.pop("subdistrict_anchal", None)
 
         if "mauza" in kwargs and "mauza_village_name" not in kwargs:
             kwargs["mauza_village_name"] = kwargs.pop("mauza")

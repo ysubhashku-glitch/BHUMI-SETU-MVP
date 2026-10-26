@@ -183,8 +183,11 @@ class DemoOCRProvider(OCRProvider):
                 except Exception:
                     pass
 
-        if doc_text and doc_category and doc_category != "UNKNOWN" and doc_category not in doc_text:
-            doc_text = f"DOCUMENT CATEGORY: {doc_category}\n" + doc_text
+        if doc_text and doc_category and doc_category != "UNKNOWN":
+            cat_display = doc_category.replace("_", " ")
+            if doc_category not in doc_text or cat_display not in doc_text:
+                doc_text = f"DOCUMENT CATEGORY: {doc_category} ({cat_display})\n" + doc_text
+
 
         if doc_text is None:
             if doc_category == "SALE_DEED":

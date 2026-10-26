@@ -143,7 +143,8 @@ def property_passport_ui():
         return FileResponse(static_file, media_type="text/html")
     return JSONResponse(status_code=404, content={"message": "Property passport UI not found."})
 
-# API v1 Router Registration
+# Root and API v1 Router Registration
+app.include_router(documents_router)
 app.include_router(auth_router, prefix="/api/v1")
 app.include_router(cases_router, prefix="/api/v1")
 app.include_router(parcels_router, prefix="/api/v1")
