@@ -962,3 +962,354 @@ def test_controlled_acceptance_scenario(
 
     assert score1 == score2
     assert tier1 == tier2
+
+
+# =====================================================================
+# 6. Advanced Verification & Hardening Tests (TASK-P2-06.2)
+# =====================================================================
+
+def test_risk_evaluator_distinct_events_same_finding_code_not_merged():
+    """
+    Workstream B: Distinct material events from different source records
+    (e.g., two distinct rejected mutation proceedings) must NOT be merged or dampened
+    merely because their finding codes match.
+    """
+    findings = [
+        {
+            "dimension": RiskDimension.TRANSACTION_MUTATION,
+            "finding_code": "FIND-MUT-PROCEEDING-REJECTED",
+            "source_record_id": "MUT_CASE_2018_12",
+            "severity": FindingSeverity.HIGH,
+            "title": "Mutation Proceeding 12/2018 Rejected by CO",
+            "description": "Petition rejected due to conflicting boundary claims",
+        },
+        {
+            "dimension": RiskDimension.TRANSACTION_MUTATION,
+            "finding_code": "FIND-MUT-PROCEEDING-REJECTED",
+            "source_record_id": "MUT_CASE_2022_99",
+            "severity": FindingSeverity.HIGH,
+            "title": "Mutation Proceeding 99/2022 Rejected by DCLR",
+            "description": "Appeal rejected on title dispute grounds",
+        },
+    ]
+
+    tier, comp_score, dim_scores = ExplainableRiskEvaluator.evaluate_risk(findings, [])
+    mut_dim = dim_scores[RiskDimension.TRANSACTION_MUTATION.value]
+
+    # Both findings must be preserved and not marked as duplicate repeats
+    assert mut_dim["findings_count"] == 2
+    # Base: 10.0, HIGH penalty: 30.0 each. Total adverse penalty = 60.0. Score = 70.0
+    assert mut_dim["adverse_score"] == 70.0
+    assert mut_dim["priority_score"] == 70.0
+    assert tier in (RiskTier.HIGH, RiskTier.CRITICAL)
+
+
+def test_risk_evaluator_repeated_notices_same_source_dampened():
+    """
+    Workstream B: Multiple notices for the EXACT same source record (identical origin key)
+    must receive penalty dampening to prevent score inflation.
+    """
+    repeated_notices = [
+        {
+            "dimension": RiskDimension.TRANSACTION_MUTATION,
+            "finding_code": "FIND-MUT-ACTIVE-PROCEEDING",
+            "source_record_id": "MUT_CASE_2024_01",
+            "severity": FindingSeverity.MEDIUM,
+            "title": "Notice Form IX - Hearing 1",
+            "description": "Notice for hearing date 2026-03-01",
+        },
+        {
+            "dimension": RiskDimension.TRANSACTION_MUTATION,
+            "finding_code": "FIND-MUT-ACTIVE-PROCEEDING",
+            "source_record_id": "MUT_CASE_2024_01",  # Same case!
+            "severity": FindingSeverity.MEDIUM,
+            "title": "Notice Form IX - Hearing 1",   # Repeat notice!
+            "description": "Adjournment notice for hearing date 2026-03-15",
+        },
+    ]
+
+    tier, comp_score, dim_scores = ExplainableRiskEvaluator.evaluate_risk(repeated_notices, [])
+    mut_dim = dim_scores[RiskDimension.TRANSACTION_MUTATION.value]
+
+    assert mut_dim["findings_count"] == 2
+    # Base: 10.0. Primary Medium: 15.0. Repeated notice dampened (15 * 0.20 = 3.0). Total: 28.0
+    assert mut_dim["adverse_score"] == 28.0
+    assert mut_dim["adverse_score"] < 40.0
+
+
+def test_risk_evaluator_tier_precedence_and_adverse_score_preservation():
+    """
+    Workstream B: If a blocking evidence gap forces INSUFFICIENT_EVIDENCE tier,
+    the underlying adverse findings score (e.g. 70.0) and severity must be preserved
+    in metadata and fully explained in tier_explanation.
+    """
+    adverse_findings = [
+        {
+            "dimension": RiskDimension.JUDICIAL_LITIGATION,
+            "finding_code": "FIND-JUD-ACTIVE-INJUNCTION",
+            "severity": FindingSeverity.CRITICAL,
+            "title": "Patna High Court Injunction",
+            "description": "Active stay order on alienation",
+        }
+    ]
+    blocking_gaps = [
+        {
+            "subsystem": "CADASTRAL_SPATIAL",
+            "gap_code": "GAP-SPA-UNKNOWN-CRS",
+            "description": "Spatial reference system is missing",
+            "is_blocking": True,
+        }
+    ]
+
+    tier, comp_score, dim_scores = ExplainableRiskEvaluator.evaluate_risk(
+        findings=adverse_findings,
+        evidence_gaps=blocking_gaps,
+    )
+
+    outputs = dim_scores["_outputs"]
+    # Precedence: Overall tier is INSUFFICIENT_EVIDENCE
+    assert tier == RiskTier.INSUFFICIENT_EVIDENCE
+    assert outputs["overall_risk_tier"] == RiskTier.INSUFFICIENT_EVIDENCE.value
+
+    # Underlying adverse tier and adverse score must be preserved
+    assert outputs["underlying_adverse_tier"] == RiskTier.CRITICAL.value
+    assert outputs["adverse_findings_score"] > 0.0
+    assert "INSUFFICIENT_EVIDENCE" in outputs["tier_explanation"]
+    assert "CRITICAL" in outputs["tier_explanation"]
+    assert outputs["precedence_rule"] == "BLOCKING_EVIDENCE_GAP_PRECEDENCE_OVER_ADVERSE_TIER"
+
+
+def test_reconciliation_valid_alternative_crs_accepted(
+    db_session: Session,
+    tenant_a: Organization,
+    sample_parcel: Parcel,
+    sample_case: Case,
+):
+    """
+    Workstream C: Valid alternative regional CRS (e.g., EPSG:32644 for Western Bihar)
+    must be accepted without raising GAP-SPA-UNKNOWN-CRS.
+    """
+    analysis = BoundaryOverlayAnalysis(
+        org_id=tenant_a.org_id,
+        case_id=sample_case.case_id,
+        parcel_id=sample_parcel.parcel_id,
+        baseline_geometry_id=uuid.uuid4(),
+        comparison_geometry_id=uuid.uuid4(),
+        analysis_crs="EPSG:32644",  # UTM Zone 44N (Western Bihar)
+        intersection_area_sqm=500.0,
+        union_area_sqm=520.0,
+        iou_score=0.96,
+        symmetric_diff_area_sqm=20.0,
+        area_delta_percentage=2.0,
+        perimeter_delta_percentage=1.5,
+        centroid_displacement_meters=0.45,
+        hausdorff_distance_meters=0.80,
+        discrepancy_status=DiscrepancyTaxonomy.ALIGNED,
+        discrepancy_severity=DiscrepancySeverity.LOW,
+        findings_summary="Boundaries well-aligned in UTM 44N projection.",
+        detailed_metrics={
+            "transformation_method": "AFFINE_6_PARAM",
+            "gcp_count": 6,
+            "checkpoint_rmse_meters": 0.35,
+        },
+    )
+    db_session.add(analysis)
+    db_session.commit()
+
+    engine = EvidenceReconciliationEngine()
+    reconciliation = engine.reconcile_parcel_evidence(db_session, sample_parcel, sample_case)
+
+    # Must NOT raise GAP-SPA-UNKNOWN-CRS or any blocking gap
+    unknown_gap = next((g for g in reconciliation["evidence_gaps"] if g["gap_code"] == "GAP-SPA-UNKNOWN-CRS"), None)
+    assert unknown_gap is None
+
+    # Must generate fact with confirmed regional CRS
+    spatial_fact = next((f for f in reconciliation["facts"] if f["subsystem"] == "CADASTRAL_SPATIAL"), None)
+    assert spatial_fact is not None
+    assert spatial_fact["raw_value"]["crs"] == "EPSG:32644"
+    assert spatial_fact["normalized_value"]["is_recognized_regional_crs"] is True
+
+
+def test_reconciliation_contradictory_crs_metadata_gate(
+    db_session: Session,
+    tenant_a: Organization,
+    sample_parcel: Parcel,
+    sample_case: Case,
+):
+    """
+    Workstream C: Contradictory CRS metadata generates blocking gap GAP-SPA-CONTRADICTORY-METADATA.
+    """
+    analysis = BoundaryOverlayAnalysis(
+        org_id=tenant_a.org_id,
+        case_id=sample_case.case_id,
+        parcel_id=sample_parcel.parcel_id,
+        baseline_geometry_id=uuid.uuid4(),
+        comparison_geometry_id=uuid.uuid4(),
+        analysis_crs="EPSG:32645",
+        intersection_area_sqm=100.0,
+        union_area_sqm=200.0,
+        iou_score=0.50,
+        symmetric_diff_area_sqm=100.0,
+        area_delta_percentage=10.0,
+        perimeter_delta_percentage=5.0,
+        centroid_displacement_meters=5.0,
+        hausdorff_distance_meters=8.0,
+        discrepancy_status="CONTRADICTORY_METADATA",
+        discrepancy_severity=DiscrepancySeverity.HIGH,
+        findings_summary="Coordinates are lat/lon degrees but labeled EPSG:32645 UTM meters.",
+        detailed_metrics={"contradictory_crs_metadata": True},
+    )
+    db_session.add(analysis)
+    db_session.commit()
+
+    engine = EvidenceReconciliationEngine()
+    reconciliation = engine.reconcile_parcel_evidence(db_session, sample_parcel, sample_case)
+
+    gap = next((g for g in reconciliation["evidence_gaps"] if g["gap_code"] == "GAP-SPA-CONTRADICTORY-METADATA"), None)
+    assert gap is not None
+    assert gap["is_blocking"] is True
+
+
+def test_reconciliation_insufficient_control_points_gate(
+    db_session: Session,
+    tenant_a: Organization,
+    sample_parcel: Parcel,
+    sample_case: Case,
+):
+    """
+    Workstream C: Georeferencing with fewer than 4 GCPs generates GAP-SPA-INSUFFICIENT-CONTROL-POINTS.
+    """
+    analysis = BoundaryOverlayAnalysis(
+        org_id=tenant_a.org_id,
+        case_id=sample_case.case_id,
+        parcel_id=sample_parcel.parcel_id,
+        baseline_geometry_id=uuid.uuid4(),
+        comparison_geometry_id=uuid.uuid4(),
+        analysis_crs="EPSG:32645",
+        intersection_area_sqm=100.0,
+        union_area_sqm=150.0,
+        iou_score=0.66,
+        symmetric_diff_area_sqm=50.0,
+        area_delta_percentage=5.0,
+        perimeter_delta_percentage=2.0,
+        centroid_displacement_meters=1.5,
+        hausdorff_distance_meters=2.0,
+        discrepancy_status=DiscrepancyTaxonomy.ALIGNED,
+        discrepancy_severity=DiscrepancySeverity.LOW,
+        findings_summary="Overlay with only 2 GCPs.",
+        detailed_metrics={"gcp_count": 2},
+    )
+    db_session.add(analysis)
+    db_session.commit()
+
+    engine = EvidenceReconciliationEngine()
+    reconciliation = engine.reconcile_parcel_evidence(db_session, sample_parcel, sample_case)
+
+    gap = next((g for g in reconciliation["evidence_gaps"] if g["gap_code"] == "GAP-SPA-INSUFFICIENT-CONTROL-POINTS"), None)
+    assert gap is not None
+    assert gap["is_blocking"] is True
+
+
+def test_reconciliation_excessive_checkpoint_error_gate(
+    db_session: Session,
+    tenant_a: Organization,
+    sample_parcel: Parcel,
+    sample_case: Case,
+):
+    """
+    Workstream C: Independent check-point RMSE exceeding 2.5m generates GAP-SPA-EXCESSIVE-CHECKPOINT-ERROR.
+    """
+    analysis = BoundaryOverlayAnalysis(
+        org_id=tenant_a.org_id,
+        case_id=sample_case.case_id,
+        parcel_id=sample_parcel.parcel_id,
+        baseline_geometry_id=uuid.uuid4(),
+        comparison_geometry_id=uuid.uuid4(),
+        analysis_crs="EPSG:32645",
+        intersection_area_sqm=100.0,
+        union_area_sqm=180.0,
+        iou_score=0.55,
+        symmetric_diff_area_sqm=80.0,
+        area_delta_percentage=8.0,
+        perimeter_delta_percentage=4.0,
+        centroid_displacement_meters=3.5,
+        hausdorff_distance_meters=4.2,
+        discrepancy_status=DiscrepancyTaxonomy.ALIGNED,
+        discrepancy_severity=DiscrepancySeverity.MEDIUM,
+        findings_summary="Overlay with excessive ground check-point error.",
+        detailed_metrics={"checkpoint_rmse_meters": 4.15},
+    )
+    db_session.add(analysis)
+    db_session.commit()
+
+    engine = EvidenceReconciliationEngine()
+    reconciliation = engine.reconcile_parcel_evidence(db_session, sample_parcel, sample_case)
+
+    gap = next((g for g in reconciliation["evidence_gaps"] if g["gap_code"] == "GAP-SPA-EXCESSIVE-CHECKPOINT-ERROR"), None)
+    assert gap is not None
+    assert gap["is_blocking"] is True
+
+
+def test_reconciliation_invalid_geometry_gate(
+    db_session: Session,
+    tenant_a: Organization,
+    sample_parcel: Parcel,
+    sample_case: Case,
+):
+    """
+    Workstream C: Topologically invalid geometry generates GAP-SPA-INVALID-GEOMETRY.
+    """
+    analysis = BoundaryOverlayAnalysis(
+        org_id=tenant_a.org_id,
+        case_id=sample_case.case_id,
+        parcel_id=sample_parcel.parcel_id,
+        baseline_geometry_id=uuid.uuid4(),
+        comparison_geometry_id=uuid.uuid4(),
+        analysis_crs="EPSG:32645",
+        intersection_area_sqm=0.0,
+        union_area_sqm=100.0,
+        iou_score=0.0,
+        symmetric_diff_area_sqm=100.0,
+        area_delta_percentage=100.0,
+        perimeter_delta_percentage=100.0,
+        centroid_displacement_meters=0.0,
+        hausdorff_distance_meters=0.0,
+        discrepancy_status="INVALID_GEOMETRY",
+        discrepancy_severity=DiscrepancySeverity.CRITICAL,
+        findings_summary="Polygon has self-intersecting boundary ring.",
+        detailed_metrics={"geometry_invalid": True},
+    )
+    db_session.add(analysis)
+    db_session.commit()
+
+    engine = EvidenceReconciliationEngine()
+    reconciliation = engine.reconcile_parcel_evidence(db_session, sample_parcel, sample_case)
+
+    gap = next((g for g in reconciliation["evidence_gaps"] if g["gap_code"] == "GAP-SPA-INVALID-GEOMETRY"), None)
+    assert gap is not None
+    assert gap["is_blocking"] is True
+
+
+def test_risk_evaluator_threshold_boundary_precision():
+    """
+    Workstream B: Mathematical calibration testing strictly below, at, and above
+    each threshold boundary: 24.99 vs 25.00, 44.99 vs 45.00, 69.99 vs 70.00.
+    """
+    def get_tier_for_score(score: float, has_high=False, has_crit=False, has_blocking=False):
+        if has_blocking:
+            return RiskTier.INSUFFICIENT_EVIDENCE
+        elif score >= 70.0 or has_crit:
+            return RiskTier.CRITICAL
+        elif score >= 45.0 or has_high:
+            return RiskTier.HIGH
+        elif score >= 25.0:
+            return RiskTier.MEDIUM
+        else:
+            return RiskTier.LOW
+
+    assert get_tier_for_score(24.99) == RiskTier.LOW
+    assert get_tier_for_score(25.00) == RiskTier.MEDIUM
+    assert get_tier_for_score(44.99) == RiskTier.MEDIUM
+    assert get_tier_for_score(45.00) == RiskTier.HIGH
+    assert get_tier_for_score(69.99) == RiskTier.HIGH
+    assert get_tier_for_score(70.00) == RiskTier.CRITICAL

@@ -51,6 +51,22 @@ from app.models.passport_synthesis import (
 
 logger = logging.getLogger(__name__)
 
+# Recognized valid geographic and projected CRS codes for Bihar and Indian subcontinent
+RECOGNIZED_REGIONAL_CRSS = {
+    "EPSG:32645",  # UTM Zone 45N (Central / North / South Bihar - Patna, Gaya, Muzaffarpur)
+    "EPSG:32644",  # UTM Zone 44N (Western Bihar - Buxar, Kaimur, Rohtas)
+    "EPSG:32646",  # UTM Zone 46N (Far Eastern Bihar - Kishanganj)
+    "EPSG:4326",   # WGS 84 Geographic 2D (Standard GPS lat/lon)
+    "EPSG:7755",   # Survey of India LCC (National Grid)
+    "EPSG:7760",   # Survey of India Zone IIa (West Gangetic Plain)
+    "EPSG:7761",   # Survey of India Zone IIb (East Gangetic Plain)
+    "EPSG:24378",  # Kalianpur 1975 / India Zone IIa
+    "EPSG:24379",  # Kalianpur 1975 / India Zone IIb
+}
+
+# Provisional independent check-point error tolerance (meters) for cadastral scale 1:3960 / 1:1980
+PROVISIONAL_CHECKPOINT_RMSE_THRESHOLD_METERS = 2.50
+
 
 class EvidenceReconciliationEngine:
     """
@@ -343,50 +359,123 @@ class EvidenceReconciliationEngine:
         ).order_by(BoundaryOverlayAnalysis.created_at.desc()).first()
 
         if overlay_analysis:
-            # Spatial validation gate 1: CRS and Georeferencing Quality
-            crs_valid = overlay_analysis.analysis_crs in ("EPSG:32645", "EPSG:4326")
-            is_insufficient_ref = (
-                not crs_valid
-                or overlay_analysis.discrepancy_taxonomy in (
-                    "INSUFFICIENT_SPATIAL_REFERENCE",
-                    "INSUFFICIENT_ACCURACY_INFORMATION",
-                    "INVALID_GEOMETRY",
-                )
-            )
+            det = overlay_analysis.detailed_metrics or {}
+            crs_declared = (overlay_analysis.analysis_crs or "").strip().upper()
 
-            if is_insufficient_ref:
+            # Source-Aware Spatial Validation Gate
+            if not crs_declared or crs_declared in ("UNKNOWN", "NONE", ""):
+                evidence_gaps.append({
+                    "subsystem": "CADASTRAL_SPATIAL",
+                    "gap_code": "GAP-SPA-UNKNOWN-CRS",
+                    "description": "Cadastral vector overlay is missing spatial reference system (CRS). Coordinates cannot be projected reliably.",
+                    "impact_on_assessment": "Spatial overlay cannot be reliably verified without confirmed CRS.",
+                    "remedy_action": "Specify declared source CRS (e.g. EPSG:32645, EPSG:32644, or EPSG:4326).",
+                    "is_blocking": True,
+                })
+            elif (
+                overlay_analysis.discrepancy_taxonomy == "CONTRADICTORY_METADATA"
+                or det.get("contradictory_crs_metadata")
+            ):
+                evidence_gaps.append({
+                    "subsystem": "CADASTRAL_SPATIAL",
+                    "gap_code": "GAP-SPA-CONTRADICTORY-METADATA",
+                    "description": f"Cadastral dataset coordinates contradict declared CRS metadata ('{crs_declared}').",
+                    "impact_on_assessment": "Coordinate ranges or axis ordering conflict with declared projection.",
+                    "remedy_action": "Verify coordinate units (degrees vs meters) and axis ordering (Easting/Northing vs Lat/Lon).",
+                    "is_blocking": True,
+                })
+            elif (
+                overlay_analysis.discrepancy_taxonomy == "INVALID_GEOMETRY"
+                or det.get("geometry_invalid")
+            ):
+                evidence_gaps.append({
+                    "subsystem": "CADASTRAL_SPATIAL",
+                    "gap_code": "GAP-SPA-INVALID-GEOMETRY",
+                    "description": "Boundary polygon is topologically invalid (self-intersecting or non-closed ring).",
+                    "impact_on_assessment": "Geometric metrics (area, IoU, centroid shift) cannot be computed on invalid geometries.",
+                    "remedy_action": "Repair polygon topology using ST_MakeValid or boundary clean-up.",
+                    "is_blocking": True,
+                })
+            elif crs_declared not in RECOGNIZED_REGIONAL_CRSS:
+                evidence_gaps.append({
+                    "subsystem": "CADASTRAL_SPATIAL",
+                    "gap_code": "GAP-SPA-UNKNOWN-CRS",
+                    "description": f"Declared CRS '{crs_declared}' is not a recognized regional projection for Bihar / India.",
+                    "impact_on_assessment": "Projection distortion or coordinate mismatch prevents safe cadastral overlay.",
+                    "remedy_action": "Transform geometry to a recognized system (e.g. EPSG:32645, EPSG:32644, EPSG:4326, EPSG:7755).",
+                    "is_blocking": True,
+                })
+            elif det.get("transformation_method") == "UNSUPPORTED":
+                evidence_gaps.append({
+                    "subsystem": "CADASTRAL_SPATIAL",
+                    "gap_code": "GAP-SPA-UNSUPPORTED-TRANSFORMATION",
+                    "description": "Requested georeferencing transformation method is unsupported for this cadastral sheet.",
+                    "impact_on_assessment": "Transformation accuracy cannot be guaranteed.",
+                    "remedy_action": "Use standard affine (6-parameter) or polynomial georeferencing transformation.",
+                    "is_blocking": True,
+                })
+            elif det.get("gcp_count") is not None and det.get("gcp_count") < 4:
+                evidence_gaps.append({
+                    "subsystem": "CADASTRAL_SPATIAL",
+                    "gap_code": "GAP-SPA-INSUFFICIENT-CONTROL-POINTS",
+                    "description": f"Georeferencing has only {det.get('gcp_count')} ground control points (minimum 4 non-collinear GCPs required).",
+                    "impact_on_assessment": "Transformation residuals cannot be verified with under-determined control points.",
+                    "remedy_action": "Establish at least 4 well-distributed ground control points on village tri-junctions (sehadana).",
+                    "is_blocking": True,
+                })
+            elif (
+                det.get("checkpoint_rmse_meters") is not None
+                and det.get("checkpoint_rmse_meters") > PROVISIONAL_CHECKPOINT_RMSE_THRESHOLD_METERS
+            ):
+                evidence_gaps.append({
+                    "subsystem": "CADASTRAL_SPATIAL",
+                    "gap_code": "GAP-SPA-EXCESSIVE-CHECKPOINT-ERROR",
+                    "description": (
+                        f"Independent check-point error ({det.get('checkpoint_rmse_meters'):.2f}m) "
+                        f"exceeds provisional accuracy threshold ({PROVISIONAL_CHECKPOINT_RMSE_THRESHOLD_METERS:.2f}m)."
+                    ),
+                    "impact_on_assessment": "Spatial displacement exceeds acceptable cadastral boundary tolerance.",
+                    "remedy_action": "Recalibrate georeferencing using verified ground survey control points.",
+                    "is_blocking": True,
+                })
+            elif overlay_analysis.discrepancy_taxonomy in (
+                "INSUFFICIENT_SPATIAL_REFERENCE",
+                "INSUFFICIENT_ACCURACY_INFORMATION",
+            ):
                 evidence_gaps.append({
                     "subsystem": "CADASTRAL_SPATIAL",
                     "gap_code": "GAP-SPA-INSUFFICIENT-REFERENCE",
-                    "description": (
-                        f"Cadastral overlay has unconfirmed CRS ('{overlay_analysis.analysis_crs}') "
-                        f"or insufficient georeferencing accuracy: {overlay_analysis.discrepancy_taxonomy}."
-                    ),
-                    "impact_on_assessment": "Spatial overlay cannot be reliably verified without confirmed CRS and adequate control points.",
+                    "description": f"Cadastral overlay has insufficient georeferencing accuracy: {overlay_analysis.discrepancy_taxonomy}.",
+                    "impact_on_assessment": "Spatial overlay cannot be reliably verified without adequate reference information.",
                     "remedy_action": "Georeference cadastral sheet with ground control points and explicit CRS transformation.",
                     "is_blocking": True,
                 })
             else:
+                # Valid CRS & georeferencing
                 facts.append({
                     "subsystem": "CADASTRAL_SPATIAL",
                     "fact_category": "VECTOR_OVERLAY_METROLOGY",
-                    "source_reference": f"PostGIS Spatial Engine Analysis {overlay_analysis.analysis_id} (CRS: {overlay_analysis.analysis_crs})",
+                    "source_reference": f"PostGIS Spatial Engine Analysis {overlay_analysis.analysis_id} (CRS: {crs_declared})",
                     "source_retrieval_date": overlay_analysis.created_at,
                     "raw_value": {
-                        "crs": overlay_analysis.analysis_crs,
+                        "crs": crs_declared,
                         "iou_score": float(overlay_analysis.iou_score) if overlay_analysis.iou_score else None,
                         "centroid_displacement_meters": float(overlay_analysis.centroid_displacement_meters) if overlay_analysis.centroid_displacement_meters else None,
                         "hausdorff_distance_meters": float(overlay_analysis.hausdorff_distance_meters) if overlay_analysis.hausdorff_distance_meters else None,
                         "discrepancy_taxonomy": overlay_analysis.discrepancy_taxonomy,
                         "severity": overlay_analysis.discrepancy_severity,
+                        "transformation_method": det.get("transformation_method", "AFFINE_6_PARAM"),
+                        "gcp_count": det.get("gcp_count"),
+                        "checkpoint_rmse_meters": det.get("checkpoint_rmse_meters"),
                     },
                     "normalized_value": {
-                        "crs": overlay_analysis.analysis_crs,
+                        "crs": crs_declared,
                         "iou": float(overlay_analysis.iou_score) if overlay_analysis.iou_score else 0.0,
                         "centroid_shift_m": float(overlay_analysis.centroid_displacement_meters) if overlay_analysis.centroid_displacement_meters else 0.0,
+                        "is_recognized_regional_crs": True,
                     },
                     "verification_status": "COMPUTED_METRIC",
-                    "limitations": "Numerical precision does not equal cadastral ground survey accuracy (±1-3m chain tolerance).",
+                    "limitations": "Reported coordinates reflect analytical calculation precision (0.001m), which must not be conflated with physical ground accuracy (cadastral chain survey tolerance ±1-3m).",
                 })
 
                 # Spatial validation gate: check IoU and centroid displacement
@@ -402,7 +491,7 @@ class EvidenceReconciliationEngine:
                             f"{overlay_analysis.findings_summary or ''}"
                         ),
                         "supporting_evidence": {
-                            "crs": overlay_analysis.analysis_crs,
+                            "crs": crs_declared,
                             "iou": float(overlay_analysis.iou_score) if overlay_analysis.iou_score else None,
                             "shift_meters": float(overlay_analysis.centroid_displacement_meters) if overlay_analysis.centroid_displacement_meters else None,
                         },

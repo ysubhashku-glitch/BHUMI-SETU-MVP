@@ -105,9 +105,10 @@ class ExplainableRiskEvaluator:
         Returns:
             (overall_risk_tier, composite_score, dimension_breakdown)
         """
-        # 1. Map findings by dimension with deduplication of identical finding_codes
+        # 1. Map findings by dimension with source-aware deduplication
         dimension_findings: Dict[RiskDimension, List[Dict[str, Any]]] = {d: [] for d in RiskDimension}
         seen_finding_codes: Dict[RiskDimension, Set[str]] = {d: set() for d in RiskDimension}
+        seen_origins: Dict[RiskDimension, Set[Tuple[str, str]]] = {d: set() for d in RiskDimension}
 
         for f in findings:
             dim = f["dimension"]
@@ -115,11 +116,27 @@ class ExplainableRiskEvaluator:
                 dim = RiskDimension(dim)
 
             code = f.get("finding_code", "")
-            # If code is already seen in this dimension, mark as correlated/duplicate to avoid artificial score inflation
+            # Origin identifier: preserves distinct material events from different sources
+            supp = f.get("supporting_evidence") or {}
+            origin_id = (
+                f.get("source_record_id")
+                or supp.get("cnr_number")
+                or supp.get("case_number")
+                or supp.get("mutation_case_no")
+                or f.get("title")
+                or ""
+            )
+            origin_key = (code, str(origin_id))
+
+            # If exact same finding code AND same source origin is already seen, apply dampening
             is_duplicate = False
-            if code and code in seen_finding_codes[dim]:
+            if origin_key in seen_origins[dim] and origin_id:
                 is_duplicate = True
-            elif code:
+            else:
+                if origin_id:
+                    seen_origins[dim].add(origin_key)
+
+            if code:
                 seen_finding_codes[dim].add(code)
 
             f_copy = dict(f)
@@ -255,16 +272,27 @@ class ExplainableRiskEvaluator:
         # -------------------------------------------------------------
         # Calibrate Overall Risk Tier against Strict Boundary Conditions
         # -------------------------------------------------------------
+        if composite_score >= 70.0 or has_critical_finding:
+            underlying_adverse_tier = RiskTier.CRITICAL
+        elif composite_score >= 45.0 or has_high_finding:
+            underlying_adverse_tier = RiskTier.HIGH
+        elif composite_score >= 25.0:
+            underlying_adverse_tier = RiskTier.MEDIUM
+        else:
+            underlying_adverse_tier = RiskTier.LOW
+
         if has_blocking_gap:
             overall_tier = RiskTier.INSUFFICIENT_EVIDENCE
-        elif composite_score >= 70.0 or has_critical_finding:
-            overall_tier = RiskTier.CRITICAL
-        elif composite_score >= 45.0 or has_high_finding:
-            overall_tier = RiskTier.HIGH
-        elif composite_score >= 25.0:
-            overall_tier = RiskTier.MEDIUM
+            tier_explanation = (
+                f"Assessment tier is INSUFFICIENT_EVIDENCE due to blocking evidence gaps. "
+                f"Underlying adverse findings evaluated at {underlying_adverse_tier.value} "
+                f"(Adverse Score: {adverse_findings_score:.2f}). Both missing evidence and adverse findings require resolution."
+            )
+            precedence_rule = "BLOCKING_EVIDENCE_GAP_PRECEDENCE_OVER_ADVERSE_TIER"
         else:
-            overall_tier = RiskTier.LOW
+            overall_tier = underlying_adverse_tier
+            tier_explanation = f"Assessment tier determined by adverse findings and diligence priority score ({composite_score:.2f})."
+            precedence_rule = "DILIGENCE_SCORE_AND_SEVERITY_OVERRIDE"
 
         # Attach overall separated outputs in dimension_scores metadata
         dimension_scores["_outputs"] = {
@@ -273,8 +301,11 @@ class ExplainableRiskEvaluator:
             "adverse_findings_score": adverse_findings_score,
             "review_priority_score": composite_score,
             "overall_risk_tier": overall_tier.value,
+            "underlying_adverse_tier": underlying_adverse_tier.value,
+            "tier_explanation": tier_explanation,
+            "precedence_rule": precedence_rule,
             "has_blocking_gap": has_blocking_gap,
-            "formula_version": "v1.1-calibrated-separated-outputs",
+            "formula_version": "v1.2-calibrated-separated-outputs",
             "weights_status": "PROVISIONAL_PENDING_EMPIRICAL_PILOT",
             "statutory_limitation": STATUTORY_SYNTHESIS_LIMITATION_STATEMENT,
         }

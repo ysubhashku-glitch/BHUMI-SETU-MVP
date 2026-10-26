@@ -131,7 +131,7 @@ class PassportSynthesisService:
             status=AssessmentStatus.COMPLETED,
             overall_risk_tier=overall_tier,
             composite_priority_score=composite_score,
-            scoring_formula_version="v1.1-calibrated-separated-outputs",
+            scoring_formula_version="v1.2-calibrated-separated-outputs",
             dimension_scores=dimension_scores,
             reconciliation_summary=summary_data,
             facts_count=len(facts_data),
