@@ -112,17 +112,15 @@ class MutationLifecycleEngine:
                 )
 
         # Rule 2: Out-of-order event timestamp check
-        if (
-            last_observation_time
-            and event_timestamp
-            and event_timestamp < last_observation_time
-            and STATE_PRECEDENCE.get(target_status, 0) < STATE_PRECEDENCE.get(current_status, 0)
-        ):
-            return (
-                current_status,
-                False,
-                f"Historical event (dated {event_timestamp.isoformat()}) ingested into ledger without reverting current status '{current_status.value}'.",
-            )
+        if last_observation_time and event_timestamp:
+            t1 = event_timestamp if event_timestamp.tzinfo else event_timestamp.replace(tzinfo=timezone.utc)
+            t2 = last_observation_time if last_observation_time.tzinfo else last_observation_time.replace(tzinfo=timezone.utc)
+            if t1 < t2 and STATE_PRECEDENCE.get(target_status, 0) < STATE_PRECEDENCE.get(current_status, 0):
+                return (
+                    current_status,
+                    False,
+                    f"Historical event (dated {event_timestamp.isoformat()}) ingested into ledger without reverting current status '{current_status.value}'.",
+                )
 
         # Rule 3: Valid progression
         if STATE_PRECEDENCE.get(target_status, 0) >= STATE_PRECEDENCE.get(current_status, 0):

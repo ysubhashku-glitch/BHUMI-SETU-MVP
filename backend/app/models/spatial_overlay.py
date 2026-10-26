@@ -2,7 +2,7 @@ import uuid
 from datetime import datetime, timezone
 from enum import Enum
 import sqlalchemy as sa
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, synonym
 from app.database import Base, CompatibleGeometry
 from app.models.base import GUID, JSONCompatible, utc_now
 
@@ -56,6 +56,7 @@ class ParcelGeometryRole(str, Enum):
 
 
 class DiscrepancyTaxonomy(str, Enum):
+    ALIGNED = "ALIGNED"
     NO_SIGNIFICANT_DIFFERENCE_DETECTED = "NO_SIGNIFICANT_DIFFERENCE_DETECTED"
     POTENTIAL_GEOMETRY_OVERLAP = "POTENTIAL_GEOMETRY_OVERLAP"
     POTENTIAL_GEOMETRY_GAP = "POTENTIAL_GEOMETRY_GAP"
@@ -251,6 +252,7 @@ class BoundaryOverlayAnalysis(Base):
     # Discrepancy diagnosis
     discrepancy_status = sa.Column(sa.String(64), nullable=False, default=DiscrepancyTaxonomy.REQUIRES_HUMAN_REVIEW)
     discrepancy_severity = sa.Column(sa.String(32), nullable=False, default=DiscrepancySeverity.MEDIUM)
+    discrepancy_taxonomy = synonym("discrepancy_status")
     findings_summary = sa.Column(sa.Text, nullable=False)
     detailed_metrics = sa.Column(JSONCompatible, nullable=False, default=dict)
     algorithm_version = sa.Column(sa.String(32), nullable=False, default="v1.0-bihar-cadastral")
@@ -267,6 +269,14 @@ class BoundaryOverlayAnalysis(Base):
     comparison_geometry = relationship("CadastralParcelGeometry", foreign_keys=[comparison_geometry_id])
     field_task = relationship("FieldVerificationTask")
     reviews = relationship("BoundaryDiscrepancyReview", back_populates="analysis", cascade="all, delete-orphan")
+
+    def __init__(self, **kwargs):
+        if "discrepancy_taxonomy" in kwargs and "discrepancy_status" not in kwargs:
+            val = kwargs.pop("discrepancy_taxonomy")
+            kwargs["discrepancy_status"] = val.value if hasattr(val, "value") else str(val)
+        if "discrepancy_status" in kwargs and hasattr(kwargs["discrepancy_status"], "value"):
+            kwargs["discrepancy_status"] = kwargs["discrepancy_status"].value
+        super().__init__(**kwargs)
 
 
 class BoundaryDiscrepancyReview(Base):

@@ -170,3 +170,8 @@ class PropertyValuation(Base):
     schedule = relationship("MVRSchedule", back_populates="valuations")
     case = relationship("Case", back_populates="valuations")
     parcel = relationship("Parcel", back_populates="valuations")
+
+    def __init__(self, **kwargs):
+        if "discrepancy_explanation" not in kwargs or not kwargs["discrepancy_explanation"]:
+            kwargs["discrepancy_explanation"] = "No discrepancy detected."
+        super().__init__(**kwargs)

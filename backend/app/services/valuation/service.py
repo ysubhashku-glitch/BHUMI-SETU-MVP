@@ -251,7 +251,7 @@ class ValuationService:
             discrepancy_status=discrepancy_result["discrepancy_status"],
             discrepancy_amount=discrepancy_result["variance_amount"],
             discrepancy_percentage=discrepancy_result["variance_percentage"],
-            discrepancy_explanation=discrepancy_result["explanation"],
+            discrepancy_explanation=discrepancy_result.get("explanation") or "No discrepancy detected.",
             rule_version=self.val_engine.RULE_VERSION,
             created_by_user_id=current_user.user_id,
         )

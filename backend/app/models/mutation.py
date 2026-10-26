@@ -270,6 +270,10 @@ class MutationCase(Base):
     def __init__(self, **kwargs):
         if "khesra_number" in kwargs and "plot_khesra_number" not in kwargs:
             kwargs["plot_khesra_number"] = kwargs.pop("khesra_number")
+        if "plot_khesra_number" not in kwargs or not kwargs["plot_khesra_number"]:
+            kwargs["plot_khesra_number"] = "UNASSIGNED"
+        if "khata_number" not in kwargs or not kwargs["khata_number"]:
+            kwargs["khata_number"] = "UNASSIGNED"
         if "circle" in kwargs and "anchal" not in kwargs:
             kwargs["anchal"] = kwargs.pop("circle")
         if "mutation_case_id" in kwargs and "mutation_id" not in kwargs:

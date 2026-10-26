@@ -73,6 +73,12 @@ class Claim(Base):
     evidence = relationship("Evidence", back_populates="claims")
     candidate_claim = relationship("CandidateClaim", back_populates="materialized_claim", uselist=False)
 
+    def __init__(self, **kwargs):
+        org_id = kwargs.pop("org_id", None)
+        super().__init__(**kwargs)
+        if org_id:
+            self.org_id = org_id
+
 class CandidateClaim(Base):
     """
     Epistemic staging claim extracted by OCR/parser/AI.

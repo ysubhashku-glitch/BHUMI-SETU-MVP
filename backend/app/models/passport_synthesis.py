@@ -20,7 +20,7 @@ from __future__ import annotations
 import enum
 import uuid
 import sqlalchemy as sa
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, synonym
 from sqlalchemy.dialects.postgresql import JSONB
 
 from app.database import Base
@@ -231,6 +231,7 @@ class AssessmentEvidenceGap(Base):
     assessment_id = sa.Column(GUID, sa.ForeignKey("passport_assessments.assessment_id", ondelete="CASCADE"), nullable=False, index=True)
 
     subsystem = sa.Column(sa.String(32), nullable=False)
+    dimension = synonym("subsystem")
     gap_code = sa.Column(sa.String(64), nullable=False, index=True)
     description = sa.Column(sa.Text, nullable=False)
     impact_on_assessment = sa.Column(sa.Text, nullable=False)
@@ -240,6 +241,14 @@ class AssessmentEvidenceGap(Base):
     created_at = sa.Column(sa.DateTime(timezone=True), default=utc_now, nullable=False)
 
     assessment = relationship("PassportAssessment", back_populates="evidence_gaps")
+
+    def __init__(self, **kwargs):
+        if "dimension" in kwargs and "subsystem" not in kwargs:
+            val = kwargs.pop("dimension")
+            kwargs["subsystem"] = val.value if hasattr(val, "value") else str(val)
+        if "subsystem" in kwargs and hasattr(kwargs["subsystem"], "value"):
+            kwargs["subsystem"] = kwargs["subsystem"].value
+        super().__init__(**kwargs)
 
 
 class AssessmentReviewAction(Base):

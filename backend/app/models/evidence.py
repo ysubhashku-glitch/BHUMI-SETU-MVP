@@ -112,6 +112,12 @@ class Document(Base):
     evidence_spans = relationship("EvidenceSpan", back_populates="document", cascade="all, delete-orphan")
     extracted_fields = relationship("ExtractedField", back_populates="document", cascade="all, delete-orphan")
 
+    def __init__(self, **kwargs):
+        case_id = kwargs.pop("case_id", None)
+        super().__init__(**kwargs)
+        if case_id:
+            self.case_id = case_id
+
 class DocumentVersion(Base):
     __tablename__ = "document_versions"
 
