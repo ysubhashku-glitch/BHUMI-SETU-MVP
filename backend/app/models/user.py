@@ -6,7 +6,10 @@ from app.models.base import GUID, utc_now
 
 class UserRole(str):
     ADMIN = "ADMIN"
+    SUPERVISOR = "SUPERVISOR"
     CASE_OPERATOR = "CASE_OPERATOR"
+    OPERATOR = "CASE_OPERATOR"
+    ANALYST = "ANALYST"
     FIELD_EXPERT = "FIELD_EXPERT"
     LEGAL_REVIEWER = "LEGAL_REVIEWER"
     REVIEWER = "REVIEWER"

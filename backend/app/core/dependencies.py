@@ -36,11 +36,23 @@ def get_current_user(
     
     return user
 
-def require_roles(*allowed_roles: str) -> Callable[[User], User]:
+def require_roles(*allowed_roles) -> Callable[[User], User]:
+    flattened = set()
+    for item in allowed_roles:
+        if isinstance(item, (list, tuple, set)):
+            flattened.update(item)
+        else:
+            flattened.add(item)
+
     def role_checker(current_user: User = Depends(get_current_user)) -> User:
-        if current_user.role not in allowed_roles:
+        authorized = set(flattened)
+        if UserRole.CASE_OPERATOR in authorized or "OPERATOR" in authorized:
+            authorized.add(UserRole.CASE_OPERATOR)
+            authorized.add("OPERATOR")
+
+        if current_user.role not in authorized:
             raise ForbiddenError(
-                f"Role '{current_user.role}' is not authorized. Required: {', '.join(allowed_roles)}"
+                f"Role '{current_user.role}' is not authorized. Required: {', '.join(str(r) for r in flattened)}"
             )
         return current_user
     return role_checker
