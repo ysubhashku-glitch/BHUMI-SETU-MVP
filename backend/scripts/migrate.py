@@ -8,17 +8,26 @@ import sys
 import time
 import argparse
 import logging
-from alembic import command
-from alembic.config import Config
-from alembic.script import ScriptDirectory
-from alembic.runtime.migration import MigrationContext
-import sqlalchemy as sa
 
 # Ensure backend root is on path
 backend_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+# Prevent local directory ./alembic from shadowing the installed alembic package
+_orig_sys_path = list(sys.path)
+_excluded = {os.path.abspath(""), os.path.abspath("."), os.path.abspath(backend_dir)}
+sys.path = [p for p in sys.path if os.path.abspath(p) not in _excluded]
+try:
+    from alembic import command
+    from alembic.config import Config
+    from alembic.script import ScriptDirectory
+    from alembic.runtime.migration import MigrationContext
+finally:
+    sys.path = _orig_sys_path
+
 if backend_dir not in sys.path:
     sys.path.insert(0, backend_dir)
 
+import sqlalchemy as sa
 from app.config import settings
 from app.core.logging_config import setup_logging
 
