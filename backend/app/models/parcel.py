@@ -52,6 +52,7 @@ class Parcel(Base):
     valuations = relationship("PropertyValuation", back_populates="parcel", cascade="all, delete-orphan")
     cadastral_geometries = relationship("CadastralParcelGeometry", back_populates="parcel")
     mutation_cases = relationship("MutationCase", back_populates="parcel")
+    passport_assessments = relationship("PassportAssessment", back_populates="parcel", cascade="all, delete-orphan")
 
 class ParcelVersion(Base):
     __tablename__ = "parcel_versions"

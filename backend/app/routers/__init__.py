@@ -14,6 +14,7 @@ from app.routers.judicial import router as judicial_router
 from app.routers.valuation import router as valuation_router
 from app.routers.spatial_overlay import router as spatial_overlay_router
 from app.routers.mutation import router as mutation_router
+from app.routers.passport import router as passport_router
 
 __all__ = [
     "auth_router",
@@ -32,5 +33,6 @@ __all__ = [
     "valuation_router",
     "spatial_overlay_router",
     "mutation_router",
+    "passport_router",
 ]
 

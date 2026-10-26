@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bhumi Setu | Comprehensive Property Passport &amp; Land Risk Intelligence</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-dark: #070b14;
+      --card-bg: rgba(15, 23, 42, 0.75);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --primary: #38bdf8;
+      --primary-glow: rgba(56, 189, 248, 0.25);
+      --emerald: #10b981;
+      --emerald-glow: rgba(16, 185, 129, 0.2);
+      --amber: #f59e0b;
+      --amber-glow: rgba(245, 158, 11, 0.2);
+      --rose: #f43f5e;
+      --rose-glow: rgba(244, 63, 94, 0.25);
+      --indigo: #6366f1;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background-color: var(--bg-dark);
+      background-image: 
+        radial-gradient(at 0% 0%, rgba(56, 189, 248, 0.14) 0px, transparent 50%),
+        radial-gradient(at 100% 100%, rgba(99, 102, 241, 0.14) 0px, transparent 50%);
+      color: var(--text-main);
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      min-height: 100vh;
+      padding: 24px;
+    }
+
+    .container {
+      max-width: 1320px;
+      margin: 0 auto;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 22px;
+      border-bottom: 1px solid var(--card-border);
+      margin-bottom: 24px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .logo-badge {
+      background: linear-gradient(135deg, #0284c7, #6366f1);
+      width: 46px;
+      height: 46px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      font-weight: 800;
+      box-shadow: 0 0 24px var(--primary-glow);
+    }
+
+    h1 {
+      font-size: 22px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+
+    .tagline {
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    .btn {
+      background: linear-gradient(135deg, #0ea5e9, #6366f1);
+      color: white;
+      border: none;
+      padding: 10px 18px;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 13px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s ease;
+      box-shadow: 0 4px 14px rgba(14, 165, 233, 0.3);
+    }
+
+    .btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(14, 165, 233, 0.45);
+    }
+
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--card-border);
+      color: var(--text-main);
+      box-shadow: none;
+    }
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    /* Statutory Notice Box */
+    .statutory-banner {
+      background: rgba(245, 158, 11, 0.08);
+      border: 1px solid rgba(245, 158, 11, 0.3);
+      border-radius: 12px;
+      padding: 16px 20px;
+      margin-bottom: 24px;
+      display: flex;
+      gap: 16px;
+      align-items: flex-start;
+    }
+
+    .statutory-icon {
+      font-size: 24px;
+      line-height: 1;
+    }
+
+    .statutory-text h4 {
+      font-size: 12.5px;
+      font-weight: 700;
+      color: #fbbf24;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-bottom: 4px;
+    }
+
+    .statutory-text p {
+      font-size: 12.5px;
+      color: #e2e8f0;
+      line-height: 1.5;
+    }
+
+    /* Executive Assessment Summary Card */
+    .synthesis-hero {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      backdrop-filter: blur(12px);
+      border-radius: 16px;
+      padding: 24px;
+      margin-bottom: 24px;
+      display: grid;
+      grid-template-columns: 2fr 1.2fr;
+      gap: 24px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .parcel-meta-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-top: 14px;
+    }
+
+    .meta-box {
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      padding: 10px 14px;
+    }
+
+    .meta-box label {
+      font-size: 11px;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      font-weight: 600;
+      display: block;
+      margin-bottom: 3px;
+    }
+
+    .meta-box value {
+      font-size: 14px;
+      font-weight: 700;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--text-main);
+    }
+
+    .score-container {
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+    }
+
+    .score-number {
+      font-size: 48px;
+      font-weight: 800;
+      font-family: 'JetBrains Mono', monospace;
+      color: #38bdf8;
+      line-height: 1;
+    }
+
+    .score-sub {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 6px;
+    }
+
+    .tier-badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      margin-top: 10px;
+    }
+
+    .tier-medium {
+      background: rgba(245, 158, 11, 0.15);
+      color: #f59e0b;
+      border: 1px solid rgba(245, 158, 11, 0.3);
+    }
+    .tier-high {
+      background: rgba(244, 63, 94, 0.15);
+      color: #f43f5e;
+      border: 1px solid rgba(244, 63, 94, 0.3);
+    }
+    .tier-low {
+      background: rgba(16, 185, 129, 0.15);
+      color: #10b981;
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+
+    /* 8 Dimensions Grid */
+    .dimensions-section {
+      margin-bottom: 24px;
+    }
+
+    .section-title {
+      font-size: 16px;
+      font-weight: 700;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .dimensions-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 16px;
+    }
+
+    .dim-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 16px 18px;
+      backdrop-filter: blur(12px);
+      transition: all 0.2s ease;
+      cursor: pointer;
+    }
+
+    .dim-card:hover {
+      border-color: rgba(56, 189, 248, 0.4);
+      transform: translateY(-2px);
+    }
+
+    .dim-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 10px;
+    }
+
+    .dim-name {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    .dim-score {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 16px;
+      font-weight: 800;
+    }
+
+    .dim-status {
+      font-size: 11px;
+      font-weight: 600;
+      padding: 2px 6px;
+      border-radius: 4px;
+      margin-top: 4px;
+      display: inline-block;
+    }
+
+    .status-consistent { background: rgba(16, 185, 129, 0.15); color: #34d399; }
+    .status-discrepancy { background: rgba(244, 63, 94, 0.15); color: #fb7185; }
+    .status-review { background: rgba(245, 158, 11, 0.15); color: #fbbf24; }
+    .status-gap { background: rgba(148, 163, 184, 0.15); color: #cbd5e1; }
+
+    /* Tabs Section */
+    .tabs-container {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      backdrop-filter: blur(12px);
+      padding: 20px;
+    }
+
+    .tabs-header {
+      display: flex;
+      gap: 12px;
+      border-bottom: 1px solid var(--card-border);
+      padding-bottom: 14px;
+      margin-bottom: 20px;
+      overflow-x: auto;
+    }
+
+    .tab-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-size: 13px;
+      font-weight: 600;
+      padding: 8px 14px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .tab-btn.active {
+      background: rgba(56, 189, 248, 0.12);
+      color: var(--primary);
+      border: 1px solid rgba(56, 189, 248, 0.25);
+    }
+
+    .table-responsive {
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12.5px;
+    }
+
+    th {
+      text-align: left;
+      padding: 10px 14px;
+      background: rgba(0, 0, 0, 0.3);
+      color: var(--text-muted);
+      font-weight: 600;
+      border-bottom: 1px solid var(--card-border);
+      text-transform: uppercase;
+      font-size: 11px;
+      letter-spacing: 0.04em;
+    }
+
+    td {
+      padding: 12px 14px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      color: var(--text-main);
+    }
+
+    tr:hover td {
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .badge-sev {
+      padding: 2px 7px;
+      border-radius: 4px;
+      font-size: 10.5px;
+      font-weight: 700;
+    }
+
+    .sev-critical { background: rgba(244, 63, 94, 0.2); color: #fb7185; }
+    .sev-high { background: rgba(244, 63, 94, 0.15); color: #f43f5e; }
+    .sev-medium { background: rgba(245, 158, 11, 0.15); color: #fbbf24; }
+    .sev-low { background: rgba(56, 189, 248, 0.15); color: #38bdf8; }
+    .sev-info { background: rgba(148, 163, 184, 0.15); color: #94a3b8; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="brand">
+        <div class="logo-badge">भू</div>
+        <div>
+          <h1>Property Passport Synthesis &amp; Land Risk Intelligence</h1>
+          <div class="tagline">Consolidated 8-Dimension Evidence Assessment &bull; Bihar Cadastral Diligence</div>
+        </div>
+      </div>
+      <div>
+        <button class="btn" onclick="triggerRecompute()">Recompute Assessment</button>
+      </div>
+    </header>
+
+    <!-- Statutory Notice Box -->
+    <div class="statutory-banner">
+      <div class="statutory-icon">⚖️</div>
+      <div class="statutory-text">
+        <h4>Statutory Due-Diligence &amp; Epistemic Limitation Notice</h4>
+        <p>
+          Bhumi Setu provides evidence-based land intelligence and due-diligence assistance. 
+          Its findings do not establish legal title, guarantee possession, certify boundaries, 
+          or replace review of authoritative records and qualified legal advice. 
+          No representation of clear or confirmed title is made.
+        </p>
+      </div>
+    </div>
+
+    <!-- Executive Assessment Hero -->
+    <div class="synthesis-hero">
+      <div>
+        <div style="font-size: 12px; color: var(--text-muted); text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em;">
+          Assessment Dossier: <span id="assessmentNumber" style="color: var(--primary); font-family: 'JetBrains Mono', monospace;">PPA-20241026-PAT-001-V1</span>
+        </div>
+        <h2 style="font-size: 20px; font-weight: 800; margin-top: 6px;" id="parcelTitle">
+          Parcel BH-PAT-DAN-00128 &bull; Mauza Mustafapur, Danapur, Patna
+        </h2>
+        <div class="parcel-meta-grid">
+          <div class="meta-box">
+            <label>Khata Number</label>
+            <value id="metaKhata">45</value>
+          </div>
+          <div class="meta-box">
+            <label>Khesra (Plot)</label>
+            <value id="metaKhesra">128</value>
+          </div>
+          <div class="meta-box">
+            <label>Recorded Area</label>
+            <value id="metaArea">0.250 Acres</value>
+          </div>
+          <div class="meta-box">
+            <label>Circle / Anchal</label>
+            <value id="metaCircle">Danapur</value>
+          </div>
+          <div class="meta-box">
+            <label>District</label>
+            <value id="metaDistrict">Patna</value>
+          </div>
+          <div class="meta-box">
+            <label>Formula Version</label>
+            <value id="metaFormula">v1.0-weighted</value>
+          </div>
+        </div>
+      </div>
+
+      <div class="score-container">
+        <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); font-weight: 700;">
+          Diligence Priority Score
+        </div>
+        <div class="score-number" id="compositeScore">38.5</div>
+        <div class="score-sub">Rule-based priority index (0-100)</div>
+        <div class="tier-badge tier-medium" id="tierBadge">TIER: MEDIUM RISK</div>
+      </div>
+    </div>
+
+    <!-- 8 Intelligence Dimensions Grid -->
+    <div class="dimensions-section">
+      <div class="section-title">
+        <span>🌐 8-Dimension Risk Assessment Breakdown</span>
+      </div>
+      <div class="dimensions-grid" id="dimensionsGrid">
+        <!-- Rendered dynamically -->
+      </div>
+    </div>
+
+    <!-- Detail Tabs Section -->
+    <div class="tabs-container">
+      <div class="tabs-header">
+        <button class="tab-btn active" onclick="switchTab('findings')">Review Findings (3)</button>
+        <button class="tab-btn" onclick="switchTab('facts')">Observed Facts (8)</button>
+        <button class="tab-btn" onclick="switchTab('inferences')">Derived Inferences (2)</button>
+        <button class="tab-btn" onclick="switchTab('gaps')">Evidence Gaps (2)</button>
+      </div>
+
+      <!-- Tab 1: Findings -->
+      <div id="tabFindings" class="table-responsive">
+        <table>
+          <thead>
+            <tr>
+              <th>Dimension</th>
+              <th>Code</th>
+              <th>Severity</th>
+              <th>Finding Title</th>
+              <th>Recommended Action</th>
+              <th>Review Status</th>
+            </tr>
+          </thead>
+          <tbody id="findingsBody">
+            <!-- Dynamically populated -->
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Tab 2: Facts -->
+      <div id="tabFacts" class="table-responsive" style="display: none;">
+        <table>
+          <thead>
+            <tr>
+              <th>Subsystem</th>
+              <th>Category</th>
+              <th>Source Reference</th>
+              <th>Verification Status</th>
+              <th>Normalized Parameters</th>
+            </tr>
+          </thead>
+          <tbody id="factsBody">
+            <!-- Dynamically populated -->
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Tab 3: Inferences -->
+      <div id="tabInferences" class="table-responsive" style="display: none;">
+        <table>
+          <thead>
+            <tr>
+              <th>Rule ID</th>
+              <th>Version</th>
+              <th>Category</th>
+              <th>Confidence</th>
+              <th>Explanation &amp; Assumptions</th>
+            </tr>
+          </thead>
+          <tbody id="inferencesBody">
+            <!-- Dynamically populated -->
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Tab 4: Gaps -->
+      <div id="tabGaps" class="table-responsive" style="display: none;">
+        <table>
+          <thead>
+            <tr>
+              <th>Subsystem</th>
+              <th>Gap Code</th>
+              <th>Description</th>
+              <th>Impact on Diligence</th>
+              <th>Remedy Action</th>
+            </tr>
+          </thead>
+          <tbody id="gapsBody">
+            <!-- Dynamically populated -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const sampleDimensions = [
+      { name: "1. Revenue Records", code: "REVENUE_RECORD", score: 18.0, status: "CONSISTENT", cls: "status-consistent" },
+      { name: "2. Transaction & Mutation", code: "TRANSACTION_MUTATION", score: 45.0, status: "REQUIRES_REVIEW", cls: "status-review" },
+      { name: "3. Judicial Litigation", code: "JUDICIAL_LITIGATION", score: 50.0, status: "DISCREPANCY_DETECTED", cls: "status-discrepancy" },
+      { name: "4. Cadastral Spatial", code: "CADASTRAL_SPATIAL", score: 35.0, status: "REQUIRES_REVIEW", cls: "status-review" },
+      { name: "5. Boundary & Field Amin", code: "BOUNDARY_FIELD", score: 20.0, status: "CONSISTENT", cls: "status-consistent" },
+      { name: "6. Document Authenticity", code: "DOCUMENT_AUTHENTICITY", score: 10.0, status: "CONSISTENT", cls: "status-consistent" },
+      { name: "7. Valuation & Stamp Duty", code: "VALUATION_STATUTORY", score: 15.0, status: "CONSISTENT", cls: "status-consistent" },
+      { name: "8. Evidence Completeness", code: "EVIDENCE_COMPLETENESS", score: 25.0, status: "INSUFFICIENT_EVIDENCE", cls: "status-gap" }
+    ];
+
+    const sampleFindings = [
+      {
+        dim: "JUDICIAL_LITIGATION",
+        code: "FIND-JUD-CORROBORATED-LITIGATION",
+        sev: "HIGH",
+        title: "Civil Suit Pending in Sub-Divisional Court (Danapur)",
+        action: "Inspect plaint property schedule before title transaction.",
+        status: "UNREVIEWED"
+      },
+      {
+        dim: "TRANSACTION_MUTATION",
+        code: "FIND-MUT-ACTIVE-PROCEEDING",
+        sev: "MEDIUM",
+        title: "Active Mutation Proceeding in Progress (MUT-2024-DAN-00104)",
+        action: "Verify whether public objections were filed during Form-IX window.",
+        status: "UNDER_REVIEW"
+      },
+      {
+        dim: "CADASTRAL_SPATIAL",
+        code: "FIND-SPA-OVERLAY-SHIFT",
+        sev: "MEDIUM",
+        title: "Centroid Shift of 4.2m Against Historical Cadastral Sheet",
+        action: "Conduct LandAmin joint demarcation with neighboring plot owners.",
+        status: "UNREVIEWED"
+      }
+    ];
+
+    function renderDimensions() {
+      const grid = document.getElementById("dimensionsGrid");
+      grid.innerHTML = "";
+      sampleDimensions.forEach(d => {
+        const card = document.createElement("div");
+        card.className = "dim-card";
+        card.innerHTML = `
+          <div class="dim-header">
+            <div>
+              <div class="dim-name">${d.name}</div>
+              <span class="dim-status ${d.cls}">${d.status}</span>
+            </div>
+            <div class="dim-score">${d.score.toFixed(1)}</div>
+          </div>
+          <div style="font-size: 11px; color: var(--text-muted); margin-top: 6px;">Weight in Composite: 15-20%</div>
+        `;
+        grid.appendChild(card);
+      });
+    }
+
+    function renderFindings() {
+      const tbody = document.getElementById("findingsBody");
+      tbody.innerHTML = "";
+      sampleFindings.forEach(f => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td><strong>${f.dim}</strong></td>
+          <td><code>${f.code}</code></td>
+          <td><span class="badge-sev sev-${f.sev.toLowerCase()}">${f.sev}</span></td>
+          <td>${f.title}</td>
+          <td>${f.action}</td>
+          <td><span style="font-size: 11px; font-weight: 700; color: #38bdf8;">${f.status}</span></td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function switchTab(tab) {
+      document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+      event.target.classList.add("active");
+
+      document.getElementById("tabFindings").style.display = (tab === 'findings') ? 'block' : 'none';
+      document.getElementById("tabFacts").style.display = (tab === 'facts') ? 'block' : 'none';
+      document.getElementById("tabInferences").style.display = (tab === 'inferences') ? 'block' : 'none';
+      document.getElementById("tabGaps").style.display = (tab === 'gaps') ? 'block' : 'none';
+    }
+
+    function triggerRecompute() {
+      alert("Triggering synthesis recomputation. A new versioned assessment (V2) will be created without overwriting historical findings.");
+    }
+
+    window.addEventListener("DOMContentLoaded", () => {
+      renderDimensions();
+      renderFindings();
+    });
+  </script>
+</body>
+</html>

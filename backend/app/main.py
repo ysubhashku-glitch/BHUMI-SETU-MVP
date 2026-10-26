@@ -25,6 +25,7 @@ from app.routers import (
     valuation_router,
     spatial_overlay_router,
     mutation_router,
+    passport_router,
 )
 
 # Configure structured logging
@@ -135,6 +136,13 @@ def mutation_timeline_ui():
         return FileResponse(static_file, media_type="text/html")
     return JSONResponse(status_code=404, content={"message": "Mutation timeline UI not found."})
 
+@app.get("/ui/property-passport", tags=["UI"])
+def property_passport_ui():
+    static_file = os.path.join(os.path.dirname(__file__), "static", "property_passport.html")
+    if os.path.exists(static_file):
+        return FileResponse(static_file, media_type="text/html")
+    return JSONResponse(status_code=404, content={"message": "Property passport UI not found."})
+
 # API v1 Router Registration
 app.include_router(auth_router, prefix="/api/v1")
 app.include_router(cases_router, prefix="/api/v1")
@@ -152,4 +160,5 @@ app.include_router(judicial_router, prefix="/api/v1")
 app.include_router(valuation_router, prefix="/api/v1")
 app.include_router(spatial_overlay_router, prefix="/api/v1")
 app.include_router(mutation_router, prefix="/api/v1")
+app.include_router(passport_router, prefix="/api/v1")
 

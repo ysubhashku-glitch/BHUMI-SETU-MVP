@@ -75,6 +75,22 @@ from app.models.mutation import (
     MutationMatchingMethod,
     MutationVerificationStatus,
 )
+from app.models.passport_synthesis import (
+    PassportAssessment,
+    AssessmentFact,
+    AssessmentInference,
+    AssessmentFinding,
+    AssessmentEvidenceGap,
+    AssessmentReviewAction,
+    AssessmentStatus,
+    RiskTier,
+    RiskDimension,
+    ReconciliationOutcome,
+    FindingSeverity,
+    FindingReviewStatus,
+    InferenceReviewStatus,
+    STATUTORY_SYNTHESIS_LIMITATION_STATEMENT,
+)
 
 __all__ = [
     "Base",
@@ -175,4 +191,18 @@ __all__ = [
     "MutationDocumentType",
     "MutationMatchingMethod",
     "MutationVerificationStatus",
+    "PassportAssessment",
+    "AssessmentFact",
+    "AssessmentInference",
+    "AssessmentFinding",
+    "AssessmentEvidenceGap",
+    "AssessmentReviewAction",
+    "AssessmentStatus",
+    "RiskTier",
+    "RiskDimension",
+    "ReconciliationOutcome",
+    "FindingSeverity",
+    "FindingReviewStatus",
+    "InferenceReviewStatus",
+    "STATUTORY_SYNTHESIS_LIMITATION_STATEMENT",
 ]

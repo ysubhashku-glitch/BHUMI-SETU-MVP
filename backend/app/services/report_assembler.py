@@ -40,9 +40,24 @@ from app.schemas.report import (
     SectionValuationData,
     SectionMutationItem,
     SectionMutationData,
+    SectionDimensionScoreItem,
+    SectionFindingSummaryItem,
+    SectionEvidenceGapItem,
+    SectionSynthesisData,
+    PASSPORT_SYNTHESIS_LIMITATION_STATEMENT,
 )
 from app.models.mutation import MutationCase, MutationStatus, MutationEntityResolution
+from app.models.passport_synthesis import (
+    PassportAssessment,
+    AssessmentFact,
+    AssessmentInference,
+    AssessmentFinding,
+    AssessmentEvidenceGap,
+    AssessmentStatus,
+    FindingSeverity,
+)
 from app.services.amin_service import calculate_polygon_area_acres
+
 
 REPORT_LEGAL_DISCLAIMER = (
     "This report consolidates available records, document extractions, spatial comparisons, "
@@ -148,6 +163,11 @@ def assemble_report_data(
     section_mutation = _build_section_mutation(db, case, target_parcel)
 
     # -------------------------------------------------------------
+    # Section Synthesis: Property Passport & Land Risk Intelligence (TASK-P2-06)
+    # -------------------------------------------------------------
+    section_synthesis = _build_section_synthesis(db, case, target_parcel)
+
+    # -------------------------------------------------------------
     # Section 1: Cover & Scope
     # -------------------------------------------------------------
     section_1 = Section1CoverData(
@@ -172,6 +192,7 @@ def assemble_report_data(
             "judicial_search_performed": section_judicial.is_searched,
             "valuation_assessment_performed": section_valuation.is_assessed,
             "mutation_history_reviewed": section_mutation.is_reviewed,
+            "property_passport_synthesized": section_synthesis.is_synthesized,
         },
         disclaimer=REPORT_LEGAL_DISCLAIMER
     )
@@ -188,6 +209,7 @@ def assemble_report_data(
         section_judicial_risk=section_judicial,
         section_valuation=section_valuation,
         section_mutation=section_mutation,
+        section_synthesis=section_synthesis,
         verification_url=verification_url,
         verification_token=token
     )
@@ -700,3 +722,112 @@ def _build_section_mutation(db: Session, case: Case, parcel: Optional[Parcel]) -
         approved_shuddhi_patras_count=approved_count,
         mutation_cases=items,
     )
+
+def _build_section_synthesis(db: Session, case: Case, parcel: Optional[Parcel]) -> SectionSynthesisData:
+    """
+    Assembles Property Passport Synthesis and Explainable Land Risk Intelligence (TASK-P2-06).
+    Retrieves the latest non-superseded (or highest version) assessment for the parcel or case.
+    """
+    from sqlalchemy import or_
+
+    query = db.query(PassportAssessment).filter(PassportAssessment.org_id == case.org_id)
+    if parcel:
+        query = query.filter(
+            or_(
+                PassportAssessment.parcel_id == parcel.parcel_id,
+                PassportAssessment.case_id == case.case_id,
+            )
+        )
+    else:
+        query = query.filter(PassportAssessment.case_id == case.case_id)
+
+    assessment = query.order_by(
+        PassportAssessment.version_number.desc(),
+        PassportAssessment.created_at.desc()
+    ).first()
+
+    if not assessment:
+        return SectionSynthesisData(
+            is_synthesized=False,
+            overall_risk_tier="INSUFFICIENT_EVIDENCE",
+            composite_priority_score=0.0,
+            statutory_disclaimer=PASSPORT_SYNTHESIS_LIMITATION_STATEMENT
+        )
+
+    # Format dimension scores
+    dimension_scores: List[SectionDimensionScoreItem] = []
+    if assessment.dimension_scores and isinstance(assessment.dimension_scores, dict):
+        for dim_code, d_data in assessment.dimension_scores.items():
+            if isinstance(d_data, dict):
+                dimension_scores.append(
+                    SectionDimensionScoreItem(
+                        dimension=dim_code,
+                        dimension_name=d_data.get("dimension_name", dim_code),
+                        score=float(d_data.get("score", 0.0)),
+                        weight=float(d_data.get("weight", 0.0)),
+                        status=str(d_data.get("status", "NOT_EVALUATED")),
+                        findings_count=int(d_data.get("findings_count", 0)),
+                    )
+                )
+
+    # Fetch top findings ordered by severity
+    severity_order = {
+        FindingSeverity.CRITICAL: 1,
+        FindingSeverity.HIGH: 2,
+        FindingSeverity.MEDIUM: 3,
+        FindingSeverity.LOW: 4,
+        FindingSeverity.INFO: 5,
+    }
+    top_findings_raw = db.query(AssessmentFinding).filter(
+        AssessmentFinding.assessment_id == assessment.assessment_id
+    ).all()
+    top_findings_sorted = sorted(top_findings_raw, key=lambda f: severity_order.get(f.severity, 99))[:8]
+
+    top_findings = [
+        SectionFindingSummaryItem(
+            finding_id=str(f.finding_id),
+            dimension=f.dimension.value if hasattr(f.dimension, "value") else str(f.dimension),
+            severity=f.severity.value if hasattr(f.severity, "value") else str(f.severity),
+            title=f.title,
+            description=f.description,
+            supporting_evidence=f.supporting_evidence or [],
+            review_status=f.review_status.value if hasattr(f.review_status, "value") else str(f.review_status),
+        )
+        for f in top_findings_sorted
+    ]
+
+    # Fetch evidence gaps
+    gaps_raw = db.query(AssessmentEvidenceGap).filter(
+        AssessmentEvidenceGap.assessment_id == assessment.assessment_id
+    ).all()
+
+    evidence_gaps = [
+        SectionEvidenceGapItem(
+            gap_id=str(g.gap_id),
+            dimension=g.dimension.value if hasattr(g.dimension, "value") else str(g.dimension),
+            gap_code=g.gap_code,
+            title=g.title,
+            description=g.description,
+            remedy_action=g.remedy_action or "Source missing documentation or schedule field inspection.",
+        )
+        for g in gaps_raw[:6]
+    ]
+
+    return SectionSynthesisData(
+        is_synthesized=True,
+        assessment_number=assessment.assessment_number,
+        version_number=assessment.version_number,
+        assessment_date=assessment.created_at.strftime("%Y-%m-%d %H:%M:%S UTC") if assessment.created_at else None,
+        overall_risk_tier=assessment.overall_risk_tier.value if hasattr(assessment.overall_risk_tier, "value") else str(assessment.overall_risk_tier),
+        composite_priority_score=float(assessment.composite_priority_score or 0.0),
+        dimension_scores=dimension_scores,
+        top_findings=top_findings,
+        evidence_gaps=evidence_gaps,
+        facts_count=len(assessment.facts),
+        inferences_count=len(assessment.inferences),
+        findings_count=len(assessment.findings),
+        gaps_count=len(assessment.evidence_gaps),
+        sha256_snapshot_hash=assessment.sha256_snapshot_hash,
+        statutory_disclaimer=assessment.statutory_disclaimer or PASSPORT_SYNTHESIS_LIMITATION_STATEMENT,
+    )
+

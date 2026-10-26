@@ -139,13 +139,128 @@ def generate_land_intelligence_pdf(data: ReportDataStructure) -> bytes:
     pdf.ln(2)
 
     # Data Availability Badges
-    pdf.set_font(pdf.unicode_font_name, size=8)
-    pdf.cell(48, 6, f"Revenue (P1-01): {'[YES]' if data.section_1_cover.data_availability_summary.get('revenue_record_available') else '[NO]'}", border=1, align="C")
-    pdf.cell(48, 6, f"Cadastral Map (P1-02): {'[YES]' if data.section_1_cover.data_availability_summary.get('cadastral_map_available') else '[NO]'}", border=1, align="C")
-    pdf.cell(47, 6, f"Title Deed (P1-03): {'[YES]' if data.section_1_cover.data_availability_summary.get('documents_available') else '[NO]'}", border=1, align="C")
-    pdf.cell(47, 6, f"Field Survey (P1-04): {'[YES]' if data.section_1_cover.data_availability_summary.get('field_survey_available') else '[NO]'}", border=1, align="C")
+    pdf.set_font(pdf.unicode_font_name, size=7.5)
+    badges = [
+        ("Revenue", data.section_1_cover.data_availability_summary.get('revenue_record_available')),
+        ("Cadastral", data.section_1_cover.data_availability_summary.get('cadastral_map_available')),
+        ("Documents", data.section_1_cover.data_availability_summary.get('documents_available')),
+        ("Field Amin", data.section_1_cover.data_availability_summary.get('field_survey_available')),
+        ("Judicial", data.section_1_cover.data_availability_summary.get('judicial_search_performed')),
+        ("Valuation", data.section_1_cover.data_availability_summary.get('valuation_assessment_performed')),
+        ("Mutation", data.section_1_cover.data_availability_summary.get('mutation_history_reviewed')),
+        ("Synthesis", data.section_1_cover.data_availability_summary.get('property_passport_synthesized')),
+    ]
+    badge_w = 190.0 / len(badges)
+    for b_label, b_val in badges:
+        pdf.cell(badge_w, 6, f"{b_label}: {'[YES]' if b_val else '[NO]'}", border=1, align="C")
     pdf.ln(8)
 
+    # =========================================================================
+    # EXECUTIVE SECTION: PROPERTY PASSPORT SYNTHESIS & RISK INTELLIGENCE (TASK-P2-06)
+    # =========================================================================
+    if data.section_synthesis and data.section_synthesis.is_synthesized:
+        synth = data.section_synthesis
+        pdf.section_header(
+            "Executive Property Passport Synthesis & Land Risk Intelligence",
+            f"Consolidated 8-Dimension Assessment ({synth.assessment_number or 'DRAFT'}) • Version {synth.version_number} • Issued: {synth.assessment_date or 'N/A'}"
+        )
+
+        # Risk Tier Banner Box
+        tier_colors = {
+            "LOW": (220, 252, 231),
+            "MEDIUM": (254, 240, 138),
+            "HIGH": (254, 215, 170),
+            "CRITICAL": (254, 202, 202),
+            "INSUFFICIENT_EVIDENCE": (241, 245, 249)
+        }
+        fill_color = tier_colors.get(synth.overall_risk_tier, (241, 245, 249))
+        pdf.set_fill_color(*fill_color)
+        pdf.set_draw_color(148, 163, 184)
+        banner_y = pdf.get_y()
+        pdf.rect(10, banner_y, 190, 16, "FD")
+
+        pdf.set_xy(14, banner_y + 2)
+        pdf.set_font(pdf.unicode_font_name, "B", size=10)
+        pdf.set_text_color(30, 41, 59)
+        pdf.cell(100, 5, f"OVERALL RISK TIER: {synth.overall_risk_tier}")
+
+        pdf.set_xy(115, banner_y + 2)
+        pdf.set_font(pdf.unicode_font_name, "B", size=10)
+        pdf.cell(80, 5, f"Priority Diligence Score: {synth.composite_priority_score:.2f} / 100.0", align="R")
+
+        pdf.set_xy(14, banner_y + 8)
+        pdf.set_font(pdf.unicode_font_name, size=7)
+        pdf.set_text_color(71, 85, 105)
+        pdf.cell(180, 5, f"Observed Facts: {synth.facts_count}  |  Inferences: {synth.inferences_count}  |  Findings: {synth.findings_count}  |  Evidence Gaps: {synth.gaps_count}  |  Snapshot: {synth.sha256_snapshot_hash[:16] if synth.sha256_snapshot_hash else 'N/A'}...")
+        pdf.set_y(banner_y + 18)
+        pdf.ln(1)
+
+        # 8-Dimension Risk Breakdown Table
+        if synth.dimension_scores:
+            with pdf.table(col_widths=(65, 45, 30, 25, 25), text_align="L", line_height=4.5, headings_style=table_head) as table:
+                row = table.row()
+                row.cell("Risk Dimension")
+                row.cell("Reconciliation Status")
+                row.cell("Dimension Score")
+                row.cell("Weight")
+                row.cell("Findings")
+
+                for d_score in synth.dimension_scores:
+                    r = table.row()
+                    r.cell(pdf.sanitize(d_score.dimension_name))
+                    r.cell(pdf.sanitize(d_score.status))
+                    r.cell(f"{d_score.score:.1f} / 100.0")
+                    r.cell(f"{d_score.weight * 100:.0f}%")
+                    r.cell(str(d_score.findings_count))
+            pdf.ln(1)
+
+        # Top Executive Findings
+        if synth.top_findings:
+            pdf.set_font(pdf.unicode_font_name, "B", size=8)
+            pdf.set_text_color(30, 58, 138)
+            pdf.cell(190, 4, "Key Review Findings & Discrepancies:", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
+            with pdf.table(col_widths=(25, 35, 55, 45, 30), text_align="L", line_height=4.5, headings_style=table_head) as table:
+                row = table.row()
+                row.cell("Severity")
+                row.cell("Dimension")
+                row.cell("Finding Title")
+                row.cell("Description")
+                row.cell("Review Status")
+
+                for f_item in synth.top_findings[:5]:
+                    r = table.row()
+                    r.cell(pdf.sanitize(f_item.severity))
+                    r.cell(pdf.sanitize(f_item.dimension)[:20])
+                    r.cell(pdf.sanitize(f_item.title)[:32])
+                    r.cell(pdf.sanitize(f_item.description)[:30])
+                    r.cell(pdf.sanitize(f_item.review_status))
+            pdf.ln(1)
+
+        # Unresolved Evidence Gaps
+        if synth.evidence_gaps:
+            pdf.set_font(pdf.unicode_font_name, "B", size=8)
+            pdf.set_text_color(180, 83, 9)
+            pdf.cell(190, 4, "Unresolved Evidence Gaps (Non-Zero Risk Disclosures):", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
+            with pdf.table(col_widths=(30, 35, 60, 65), text_align="L", line_height=4.5, headings_style=table_head) as table:
+                row = table.row()
+                row.cell("Gap Code")
+                row.cell("Dimension")
+                row.cell("Missing Evidence Description")
+                row.cell("Remedy Due Diligence Action")
+
+                for g_item in synth.evidence_gaps[:4]:
+                    r = table.row()
+                    r.cell(pdf.sanitize(g_item.gap_code))
+                    r.cell(pdf.sanitize(g_item.dimension)[:20])
+                    r.cell(pdf.sanitize(g_item.description)[:38])
+                    r.cell(pdf.sanitize(g_item.remedy_action)[:40])
+            pdf.ln(1)
+
+        # Prominent Statutory Passport Limitation Statement Box
+        pdf.set_font(pdf.unicode_font_name, size=6)
+        pdf.set_text_color(100, 116, 139)
+        pdf.multi_cell(190, 2.7, synth.statutory_disclaimer, border=1)
+        pdf.ln(2)
 
     # =========================================================================
     # SECTION 2: PARCEL IDENTITY & REVENUE RECORDS (P1-01)

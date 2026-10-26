@@ -281,9 +281,63 @@ class SectionMutationData(BaseModel):
     mutation_cases: List[SectionMutationItem] = Field(default_factory=list)
     limitation_statement: str = MUTATION_REPORT_LIMITATION_STATEMENT
 
+PASSPORT_SYNTHESIS_LIMITATION_STATEMENT = (
+    "STATUTORY PROPERTY PASSPORT SYNTHESIS & RISK INTELLIGENCE NOTICE:\n"
+    "1. Bhumi Setu provides evidence-based land intelligence and due-diligence assistance. "
+    "Its findings do not establish legal title, guarantee possession, certify boundaries, "
+    "or replace review of authoritative records and qualified legal advice.\n"
+    "2. The composite risk score is a deterministic, rule-based priority index (0.00 to 100.00) "
+    "measuring inconsistency density and verification gaps; it is NOT a statistical probability of title defect.\n"
+    "3. No finding represents a title confirmation or clean-title certificate.\n"
+    "4. Missing or unavailable evidence is explicitly surfaced as an evidence gap rather than assumed to indicate zero risk.\n"
+    "5. Name similarity alone does not constitute party identity without corroborating cadastral or revenue identifiers."
+)
+
+class SectionDimensionScoreItem(BaseModel):
+    dimension: str
+    dimension_name: str
+    score: float
+    weight: float
+    status: str
+    findings_count: int
+
+class SectionFindingSummaryItem(BaseModel):
+    finding_id: str
+    dimension: str
+    severity: str
+    title: str
+    description: str
+    supporting_evidence: List[str] = Field(default_factory=list)
+    review_status: str
+
+class SectionEvidenceGapItem(BaseModel):
+    gap_id: str
+    dimension: str
+    gap_code: str
+    title: str
+    description: str
+    remedy_action: str
+
+class SectionSynthesisData(BaseModel):
+    is_synthesized: bool
+    assessment_number: Optional[str] = None
+    version_number: int = 1
+    assessment_date: Optional[str] = None
+    overall_risk_tier: str = "INSUFFICIENT_EVIDENCE"
+    composite_priority_score: float = 0.0
+    dimension_scores: List[SectionDimensionScoreItem] = Field(default_factory=list)
+    top_findings: List[SectionFindingSummaryItem] = Field(default_factory=list)
+    evidence_gaps: List[SectionEvidenceGapItem] = Field(default_factory=list)
+    facts_count: int = 0
+    inferences_count: int = 0
+    findings_count: int = 0
+    gaps_count: int = 0
+    sha256_snapshot_hash: Optional[str] = None
+    statutory_disclaimer: str = PASSPORT_SYNTHESIS_LIMITATION_STATEMENT
+
 class ReportDataStructure(BaseModel):
     """
-    Testable normalized data representation of all report sections including judicial risk, valuation, and mutation intelligence.
+    Testable normalized data representation of all report sections including judicial risk, valuation, mutation intelligence, and property passport synthesis.
     """
     section_1_cover: Section1CoverData
     section_2_revenue: Section2RevenueData
@@ -296,5 +350,7 @@ class ReportDataStructure(BaseModel):
     section_judicial_risk: Optional[SectionJudicialRiskData] = None
     section_valuation: Optional[SectionValuationData] = None
     section_mutation: Optional[SectionMutationData] = None
+    section_synthesis: Optional[SectionSynthesisData] = None
     verification_url: str
     verification_token: str
+
