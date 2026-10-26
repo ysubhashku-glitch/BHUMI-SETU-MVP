@@ -11,6 +11,7 @@ from app.routers.reports import router as reports_router
 from app.routers.mcp_router import router as mcp_router
 from app.routers.health import router as health_router
 from app.routers.judicial import router as judicial_router
+from app.routers.valuation import router as valuation_router
 
 __all__ = [
     "auth_router",
@@ -26,4 +27,5 @@ __all__ = [
     "mcp_router",
     "health_router",
     "judicial_router",
+    "valuation_router",
 ]

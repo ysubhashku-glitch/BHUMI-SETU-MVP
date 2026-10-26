@@ -178,9 +178,56 @@ class SectionJudicialRiskData(BaseModel):
     candidate_cases: List[SectionJudicialRiskItem] = Field(default_factory=list)
     limitation_statement: str = JUDICIAL_REPORT_LIMITATION_STATEMENT
 
+VALUATION_REPORT_LIMITATION_STATEMENT = (
+    "STATUTORY VALUATION & STAMP DUTY LIMITATION NOTICE:\n"
+    "1. MVR guideline circle rates and statutory charge estimates are derived from District Collectorate published schedules.\n"
+    "2. This assessment is strictly informational and does not constitute a final binding adjudication under Section 47-A of the Indian Stamp Act (Bihar Amendment).\n"
+    "3. Final stamp duty and registration fees are assessed by the competent Sub-Registrar at the time of deed presentation.\n"
+    "4. Declared consideration lower than government guideline valuation triggers minimum statutory assessment base rules to prevent duty shortfall."
+)
+
+class SectionValuationItem(BaseModel):
+    valuation_id: str
+    schedule_code: str
+    district: str
+    anchal_circle: str
+    mauza: str
+    property_category: str
+    road_category: str
+    jurisdiction_type: str
+    total_area_decimal: float
+    input_area_value: float
+    input_area_unit: str
+    unit_circle_rate: float
+    calculated_land_value: float
+    calculated_structure_value: float
+    total_government_valuation: float
+    declared_consideration: Optional[float] = None
+    assessment_base: float
+    stamp_duty_rate_percent: float
+    stamp_duty_amount: float
+    registration_fee_rate_percent: float
+    registration_fee_amount: float
+    municipal_surcharge_percent: float
+    municipal_surcharge_amount: float
+    total_statutory_charges: float
+    concession_applied: Optional[str] = None
+    discrepancy_status: str
+    discrepancy_amount: float
+    discrepancy_percentage: float
+    discrepancy_explanation: str
+    verification_status: str
+    rule_version: str
+    valuation_date: Optional[str] = None
+
+class SectionValuationData(BaseModel):
+    is_assessed: bool
+    valuations: List[SectionValuationItem] = Field(default_factory=list)
+    limitation_statement: str = VALUATION_REPORT_LIMITATION_STATEMENT
+
 class ReportDataStructure(BaseModel):
     """
-    Testable normalized data representation of all report sections including judicial risk.
+    Testable normalized data representation of all report sections including judicial risk and valuation.
     """
     section_1_cover: Section1CoverData
     section_2_revenue: Section2RevenueData
@@ -191,5 +238,6 @@ class ReportDataStructure(BaseModel):
     section_7_evidence: List[Section7EvidenceItem]
     section_8_findings_actions: List[Section8ActionItem]
     section_judicial_risk: Optional[SectionJudicialRiskData] = None
+    section_valuation: Optional[SectionValuationData] = None
     verification_url: str
     verification_token: str

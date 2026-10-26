@@ -20,6 +20,7 @@ from app.models.finding import Finding, FindingStatus, RequiredAction
 from app.models.field_task import FieldVerificationTask, TaskStatus
 from app.models.field_survey import FieldSurvey
 from app.models.judicial import JudicialCase, ParcelJudicialMatch
+from app.models.valuation import PropertyValuation, MVRSchedule
 from app.models.user import User
 from app.core.exceptions import EntityNotFoundError, CrossTenantAccessError
 from app.schemas.report import (
@@ -34,6 +35,8 @@ from app.schemas.report import (
     Section8ActionItem,
     SectionJudicialRiskItem,
     SectionJudicialRiskData,
+    SectionValuationItem,
+    SectionValuationData,
 )
 from app.services.amin_service import calculate_polygon_area_acres
 
@@ -131,6 +134,11 @@ def assemble_report_data(
     section_judicial = _build_section_judicial(db, case, target_parcel)
 
     # -------------------------------------------------------------
+    # Section Valuation: MVR Circle Rate & Stamp Duty Intelligence
+    # -------------------------------------------------------------
+    section_valuation = _build_section_valuation(db, case, target_parcel)
+
+    # -------------------------------------------------------------
     # Section 1: Cover & Scope
     # -------------------------------------------------------------
     section_1 = Section1CoverData(
@@ -152,6 +160,7 @@ def assemble_report_data(
             "documents_available": len(section_4) > 0,
             "field_survey_available": section_5.is_available,
             "judicial_search_performed": section_judicial.is_searched,
+            "valuation_assessment_performed": section_valuation.is_assessed,
         },
         disclaimer=REPORT_LEGAL_DISCLAIMER
     )
@@ -166,6 +175,7 @@ def assemble_report_data(
         section_7_evidence=section_7,
         section_8_findings_actions=section_8,
         section_judicial_risk=section_judicial,
+        section_valuation=section_valuation,
         verification_url=verification_url,
         verification_token=token
     )
@@ -482,4 +492,67 @@ def _build_section_judicial(db: Session, case: Case, parcel: Optional[Parcel]) -
         total_candidates_found=len(candidates),
         active_injunctions_detected=active_injunctions,
         candidate_cases=candidates,
+    )
+
+def _build_section_valuation(db: Session, case: Case, parcel: Optional[Parcel]) -> SectionValuationData:
+    """
+    Assembles government MVR guideline valuations, stamp duty assessments, and discrepancy records.
+    """
+    query = db.query(PropertyValuation).filter(PropertyValuation.case_id == case.case_id)
+    if parcel:
+        query = query.filter(PropertyValuation.parcel_id == parcel.parcel_id)
+    db_vals = query.all()
+
+    items: List[SectionValuationItem] = []
+    for v in db_vals:
+        sched = db.query(MVRSchedule).filter(MVRSchedule.schedule_id == v.schedule_id).first()
+        sched_code = sched.schedule_code if sched else "MVR-UNKNOWN"
+        district = sched.district if sched else "PATNA"
+        anchal = sched.anchal_circle if sched else "UNKNOWN"
+        mauza = sched.mauza if sched else "UNKNOWN"
+        prop_cat = sched.property_category if sched else "AGRICULTURAL"
+        road_cat = sched.road_category if sched else "RURAL_ROAD_OR_NO_ROAD"
+        jur_type = sched.jurisdiction_type if sched else "RURAL"
+        ver_status = sched.verification_status if sched else "PROVISIONAL"
+
+        items.append(
+            SectionValuationItem(
+                valuation_id=str(v.valuation_id),
+                schedule_code=sched_code,
+                district=district,
+                anchal_circle=anchal,
+                mauza=mauza,
+                property_category=prop_cat,
+                road_category=road_cat,
+                jurisdiction_type=jur_type,
+                total_area_decimal=float(v.total_area_decimal),
+                input_area_value=float(v.input_area_value),
+                input_area_unit=v.input_area_unit,
+                unit_circle_rate=float(v.unit_circle_rate),
+                calculated_land_value=float(v.calculated_land_value),
+                calculated_structure_value=float(v.calculated_structure_value),
+                total_government_valuation=float(v.total_government_valuation),
+                declared_consideration=float(v.declared_transaction_consideration) if v.declared_transaction_consideration is not None else None,
+                assessment_base=float(v.assessment_base),
+                stamp_duty_rate_percent=float(v.stamp_duty_rate_percent),
+                stamp_duty_amount=float(v.stamp_duty_amount),
+                registration_fee_rate_percent=float(v.registration_fee_rate_percent),
+                registration_fee_amount=float(v.registration_fee_amount),
+                municipal_surcharge_percent=float(v.municipal_surcharge_percent),
+                municipal_surcharge_amount=float(v.municipal_surcharge_amount),
+                total_statutory_charges=float(v.total_statutory_charges),
+                concession_applied=v.concession_applied,
+                discrepancy_status=v.discrepancy_status,
+                discrepancy_amount=float(v.discrepancy_amount),
+                discrepancy_percentage=float(v.discrepancy_percentage),
+                discrepancy_explanation=v.discrepancy_explanation,
+                verification_status=ver_status,
+                rule_version=v.rule_version,
+                valuation_date=v.valuation_date.strftime("%Y-%m-%d %H:%M:%S") if v.valuation_date else None,
+            )
+        )
+
+    return SectionValuationData(
+        is_assessed=len(items) > 0,
+        valuations=items,
     )

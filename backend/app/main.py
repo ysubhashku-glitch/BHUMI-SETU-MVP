@@ -21,7 +21,8 @@ from app.routers import (
     reports_router,
     mcp_router,
     health_router,
-    judicial_router
+    judicial_router,
+    valuation_router
 )
 
 # Configure structured logging
@@ -111,6 +112,13 @@ def document_viewer_ui():
         return FileResponse(static_file, media_type="text/html")
     return JSONResponse(status_code=404, content={"message": "Document viewer UI not found."})
 
+@app.get("/ui/valuation-calculator", tags=["UI"])
+def valuation_calculator_ui():
+    static_file = os.path.join(os.path.dirname(__file__), "static", "valuation_calculator.html")
+    if os.path.exists(static_file):
+        return FileResponse(static_file, media_type="text/html")
+    return JSONResponse(status_code=404, content={"message": "Valuation calculator UI not found."})
+
 # API v1 Router Registration
 app.include_router(auth_router, prefix="/api/v1")
 app.include_router(cases_router, prefix="/api/v1")
@@ -125,3 +133,4 @@ app.include_router(reports_router, prefix="/api/v1")
 app.include_router(mcp_router, prefix="/api/v1")
 app.include_router(health_router, prefix="/api/v1")
 app.include_router(judicial_router, prefix="/api/v1")
+app.include_router(valuation_router, prefix="/api/v1")

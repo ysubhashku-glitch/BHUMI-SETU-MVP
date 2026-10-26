@@ -36,6 +36,17 @@ from app.models.judicial import (
     ParcelMatchCategory,
     MatchReviewStatus
 )
+from app.models.valuation import (
+    MVRSchedule,
+    PropertyValuation,
+    PropertyCategory,
+    RoadCategory,
+    JurisdictionType,
+    AreaUnit,
+    ScheduleVerificationStatus,
+    DiscrepancyStatus,
+    BuyerGenderCategory,
+)
 
 __all__ = [
     "Base",
@@ -103,4 +114,13 @@ __all__ = [
     "JudicialRiskCategory",
     "ParcelMatchCategory",
     "MatchReviewStatus",
+    "MVRSchedule",
+    "PropertyValuation",
+    "PropertyCategory",
+    "RoadCategory",
+    "JurisdictionType",
+    "AreaUnit",
+    "ScheduleVerificationStatus",
+    "DiscrepancyStatus",
+    "BuyerGenderCategory",
 ]

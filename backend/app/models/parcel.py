@@ -49,6 +49,7 @@ class Parcel(Base):
     findings = relationship("Finding", back_populates="parcel")
     surveys = relationship("FieldSurvey", back_populates="parcel")
     judicial_matches = relationship("ParcelJudicialMatch", back_populates="parcel", cascade="all, delete-orphan")
+    valuations = relationship("PropertyValuation", back_populates="parcel", cascade="all, delete-orphan")
 
 class ParcelVersion(Base):
     __tablename__ = "parcel_versions"

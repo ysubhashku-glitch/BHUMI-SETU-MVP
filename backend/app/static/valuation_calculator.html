@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BhumiSetu — Bihar MVR Circle Rate & Stamp Duty Calculator</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #090d16;
+      --card-bg: rgba(22, 30, 49, 0.75);
+      --card-border: rgba(56, 189, 248, 0.15);
+      --text: #f1f5f9;
+      --text-muted: #94a3b8;
+      --accent: #38bdf8;
+      --accent-glow: rgba(56, 189, 248, 0.25);
+      --success: #22c55e;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --font-main: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: radial-gradient(circle at top right, #132238 0%, #090d16 100%);
+      color: var(--text);
+      font-family: var(--font-main);
+      padding: 24px;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+    header {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 18px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      backdrop-filter: blur(12px);
+    }
+    .logo-box h1 {
+      font-size: 1.45rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, #38bdf8 0%, #818cf8 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      letter-spacing: -0.02em;
+    }
+    .logo-box p {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+    .badge {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      border: 1px solid transparent;
+    }
+    .badge-cyan { background: rgba(56, 189, 248, 0.15); color: #38bdf8; border-color: rgba(56, 189, 248, 0.3); }
+    .badge-amber { background: rgba(245, 158, 11, 0.15); color: #f59e0b; border-color: rgba(245, 158, 11, 0.3); }
+    .badge-green { background: rgba(34, 197, 94, 0.15); color: #22c55e; border-color: rgba(34, 197, 94, 0.3); }
+    .badge-red { background: rgba(239, 68, 68, 0.15); color: #ef4444; border-color: rgba(239, 68, 68, 0.3); }
+
+    .main-grid {
+      display: grid;
+      grid-template-columns: 460px 1fr;
+      gap: 24px;
+      flex: 1;
+    }
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 22px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      backdrop-filter: blur(12px);
+    }
+    .card h2 {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      padding-bottom: 12px;
+    }
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    label {
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    input, select {
+      background: rgba(15, 23, 42, 0.7);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 8px;
+      color: var(--text);
+      font-family: var(--font-main);
+      font-size: 0.9rem;
+      padding: 9px 12px;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    input:focus, select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-glow);
+    }
+    .btn {
+      background: linear-gradient(135deg, #0284c7 0%, #2563eb 100%);
+      border: none;
+      border-radius: 8px;
+      color: #fff;
+      font-family: var(--font-main);
+      font-size: 0.95rem;
+      font-weight: 600;
+      padding: 12px;
+      cursor: pointer;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 8px;
+      transition: transform 0.1s, opacity 0.2s, box-shadow 0.2s;
+      margin-top: 6px;
+      box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35);
+    }
+    .btn:hover {
+      opacity: 0.95;
+      transform: translateY(-1px);
+    }
+    .btn:active {
+      transform: translateY(0);
+    }
+
+    /* Output Section */
+    .metric-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+    }
+    .metric-box {
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 10px;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .metric-title {
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .metric-val {
+      font-size: 1.35rem;
+      font-weight: 700;
+      font-family: var(--font-mono);
+      color: #fff;
+    }
+    .metric-sub {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .charges-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+      background: rgba(15, 23, 42, 0.5);
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .charges-table th {
+      background: rgba(30, 41, 59, 0.7);
+      padding: 10px 14px;
+      text-align: left;
+      font-weight: 600;
+      color: var(--text-muted);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      font-size: 0.78rem;
+      text-transform: uppercase;
+    }
+    .charges-table td {
+      padding: 10px 14px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    }
+    .charges-table tr:last-child td {
+      border-bottom: none;
+      font-weight: 700;
+      background: rgba(56, 189, 248, 0.06);
+    }
+    .mono {
+      font-family: var(--font-mono);
+    }
+
+    .discrepancy-card {
+      border-radius: 10px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      border: 1px solid transparent;
+    }
+    .discrepancy-card.warning {
+      background: rgba(245, 158, 11, 0.1);
+      border-color: rgba(245, 158, 11, 0.3);
+      color: #fef3c7;
+    }
+    .discrepancy-card.success {
+      background: rgba(34, 197, 94, 0.1);
+      border-color: rgba(34, 197, 94, 0.3);
+      color: #dcfce7;
+    }
+    .discrepancy-card.info {
+      background: rgba(56, 189, 248, 0.1);
+      border-color: rgba(56, 189, 248, 0.3);
+      color: #e0f2fe;
+    }
+
+    .disclaimer-banner {
+      background: rgba(15, 23, 42, 0.5);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 8px;
+      padding: 12px 16px;
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      line-height: 1.4;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="logo-box">
+      <h1>BHUMI SETU  |  BIHAR MVR & STAMP DUTY INTELLIGENCE</h1>
+      <p>Department of Registration, Excise & Prohibition Official Schedule Compliance</p>
+    </div>
+    <div>
+      <span class="badge badge-cyan" id="statusBadge">Engine Ready (v2026.1)</span>
+    </div>
+  </header>
+
+  <div class="main-grid">
+    <!-- INPUT FORM -->
+    <div class="card">
+      <h2>1. Property & Jurisdiction Traits</h2>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="district">District</label>
+          <select id="district" onchange="onDistrictChange()">
+            <option value="PATNA" selected>PATNA</option>
+            <option value="GAYA">GAYA</option>
+            <option value="SARAN">SARAN</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="anchal">Anchal / Circle</label>
+          <select id="anchal" onchange="onAnchalChange()">
+            <option value="Danapur" selected>Danapur</option>
+            <option value="Patna Sadar">Patna Sadar (PMC)</option>
+            <option value="Bakhtiyarpur">Bakhtiyarpur</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="mauza">Mauza / Village</label>
+          <select id="mauza">
+            <option value="Kotwa" selected>Kotwa</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="propCategory">Property Category</label>
+          <select id="propCategory">
+            <option value="AGRICULTURAL" selected>Agricultural</option>
+            <option value="RESIDENTIAL">Residential (Awasiya)</option>
+            <option value="COMMERCIAL">Commercial (Vyavsayik)</option>
+            <option value="INDUSTRIAL">Industrial</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="roadCategory">Road Frontage / Connectivity</label>
+        <select id="roadCategory">
+          <option value="MAIN_ROAD_NH_SH">Main Road (NH / SH Frontage)</option>
+          <option value="PWD_ROAD">PWD District Paved Road</option>
+          <option value="BRANCH_ROAD_MUNICIPAL">Branch Road / Municipal Road</option>
+          <option value="RURAL_ROAD_OR_NO_ROAD" selected>Rural Road / Internal Field (No Highway)</option>
+        </select>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="areaValue">Land Area Quantity</label>
+          <input type="number" id="areaValue" value="5.0" step="0.01" min="0.01">
+        </div>
+        <div class="form-group">
+          <label for="areaUnit">Area Unit</label>
+          <select id="areaUnit">
+            <option value="DECIMAL" selected>Decimal</option>
+            <option value="KATHA">Katha (3.125 Decimals)</option>
+            <option value="ACRE">Acre (100 Decimals)</option>
+            <option value="BIGHA">Bigha (62.5 Decimals)</option>
+            <option value="SQFT">Square Feet</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="builtUpSqft">Structure Plinth (SqFt)</label>
+          <input type="number" id="builtUpSqft" value="0" min="0" placeholder="Optional">
+        </div>
+        <div class="form-group">
+          <label for="constRate">Construction Rate/SqFt</label>
+          <input type="number" id="constRate" value="0" min="0" placeholder="e.g. 1200">
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="buyerCategory">Buyer Classification</label>
+          <select id="buyerCategory">
+            <option value="MALE" selected>Male Purchaser (6% Duty)</option>
+            <option value="FEMALE">Female Purchaser (5.6% Duty Concession)</option>
+            <option value="JOINT_MALE_FEMALE">Joint Male + Female (5.8% Duty)</option>
+            <option value="ORGANIZATION_OR_TRUST">Corporate / Trust (6% Duty)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="declaredVal">Declared Price (INR)</label>
+          <input type="number" id="declaredVal" value="200000" step="1000" placeholder="Deed Consideration">
+        </div>
+      </div>
+
+      <button class="btn" id="calcBtn" onclick="executeValuation()">
+        <span>Calculate Official Valuation & Taxes</span>
+      </button>
+    </div>
+
+    <!-- RESULT BREAKDOWN -->
+    <div class="card">
+      <h2>2. Government Valuation & Statutory Assessment</h2>
+
+      <div class="metric-grid">
+        <div class="metric-box">
+          <span class="metric-title">Guideline Land Value</span>
+          <span class="metric-val" id="dispLandVal">₹ 2,25,000</span>
+          <span class="metric-sub" id="dispAppliedRate">Rate: ₹45,000 / decimal</span>
+        </div>
+        <div class="metric-box">
+          <span class="metric-title">Sec 47-A Assessment Base</span>
+          <span class="metric-val" id="dispAssessBase">₹ 2,25,000</span>
+          <span class="metric-sub">Max(Consideration, Guideline)</span>
+        </div>
+        <div class="metric-box">
+          <span class="metric-title">Total Statutory Charges</span>
+          <span class="metric-val" id="dispTotalTax" style="color: #38bdf8;">₹ 18,000</span>
+          <span class="metric-sub" id="dispTaxRate">Duty + Surcharge + Reg Fee</span>
+        </div>
+      </div>
+
+      <!-- DISCREPANCY ANALYSIS BOX -->
+      <div class="discrepancy-card warning" id="discrepancyBox">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <strong id="discHeading">POTENTIAL UNDERVALUATION DETECTED</strong>
+          <span class="badge badge-amber" id="discBadge">Section 47-A Deficit</span>
+        </div>
+        <p id="discExplanation" style="font-size:0.83rem; line-height:1.45;">
+          Declared consideration (₹2,00,000.00) is lower than the official government guideline valuation (₹2,25,000.00) by ₹25,000.00 (11.11% deficit). Under Section 47-A of the Indian Stamp Act (Bihar Amendment), statutory stamp duty and registration fees must be assessed on the government valuation (₹2,25,000.00).
+        </p>
+      </div>
+
+      <!-- DETAILED CHARGES TABLE -->
+      <table class="charges-table">
+        <thead>
+          <tr>
+            <th>Statutory Head</th>
+            <th>Applicable Rate</th>
+            <th>Assessment Base</th>
+            <th style="text-align:right;">Estimated Liability</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Stamp Duty (Sale Conveyance)</td>
+            <td id="rowStampRate">6.00 %</td>
+            <td class="mono" id="rowStampBase">₹ 2,25,000.00</td>
+            <td class="mono" style="text-align:right;" id="rowStampAmt">₹ 13,500.00</td>
+          </tr>
+          <tr>
+            <td>Urban Municipal Corporation Surcharge</td>
+            <td id="rowMuniRate">0.00 %</td>
+            <td class="mono" id="rowMuniBase">₹ 2,25,000.00</td>
+            <td class="mono" style="text-align:right;" id="rowMuniAmt">₹ 0.00</td>
+          </tr>
+          <tr>
+            <td>Registration Fee (Bihar Registration Rules)</td>
+            <td>2.00 %</td>
+            <td class="mono" id="rowRegBase">₹ 2,25,000.00</td>
+            <td class="mono" style="text-align:right;" id="rowRegAmt">₹ 4,500.00</td>
+          </tr>
+          <tr>
+            <td>TOTAL STATUTORY CHARGES PAYABLE</td>
+            <td id="rowTotalRate">8.00 %</td>
+            <td class="mono" id="rowTotalBase">₹ 2,25,000.00</td>
+            <td class="mono" style="text-align:right; color:#38bdf8;" id="rowTotalAmt">₹ 18,000.00</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- DISCLAIMER BANNER -->
+      <div class="disclaimer-banner">
+        <strong>STATUTORY DISCLAIMER & LEGAL NOTICE:</strong> Minimum Valuation Register (MVR) rates and statutory stamp duty calculations are informational estimates derived from official District Collectorate gazettes. Final payable duties and registration fees are subject to assessment by the competent Sub-Registrar at deed presentation under Section 47-A.
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function onDistrictChange() {
+      const dist = document.getElementById('district').value;
+      const anchalSelect = document.getElementById('anchal');
+      anchalSelect.innerHTML = '';
+      if (dist === 'PATNA') {
+        anchalSelect.innerHTML = `
+          <option value="Danapur" selected>Danapur</option>
+          <option value="Patna Sadar">Patna Sadar (PMC)</option>
+          <option value="Bakhtiyarpur">Bakhtiyarpur</option>
+        `;
+      } else if (dist === 'GAYA') {
+        anchalSelect.innerHTML = `
+          <option value="Bodh Gaya" selected>Bodh Gaya</option>
+          <option value="Gaya Town">Gaya Town</option>
+        `;
+      } else {
+        anchalSelect.innerHTML = `<option value="Saran Sadar">Saran Sadar</option>`;
+      }
+      onAnchalChange();
+    }
+
+    function onAnchalChange() {
+      const anchal = document.getElementById('anchal').value;
+      const mauzaSelect = document.getElementById('mauza');
+      mauzaSelect.innerHTML = '';
+      if (anchal === 'Danapur') {
+        mauzaSelect.innerHTML = `<option value="Kotwa" selected>Kotwa</option>`;
+      } else if (anchal === 'Patna Sadar') {
+        mauzaSelect.innerHTML = `<option value="Kankarbagh" selected>Kankarbagh</option>`;
+      } else if (anchal === 'Bakhtiyarpur') {
+        mauzaSelect.innerHTML = `<option value="Bakhtiyarpur" selected>Bakhtiyarpur</option>`;
+      } else if (anchal === 'Bodh Gaya') {
+        mauzaSelect.innerHTML = `<option value="Bodh Gaya" selected>Bodh Gaya</option>`;
+      } else {
+        mauzaSelect.innerHTML = `<option value="Main Town" selected>Main Town</option>`;
+      }
+    }
+
+    async function executeValuation() {
+      const payload = {
+        district: document.getElementById('district').value,
+        anchal_circle: document.getElementById('anchal').value,
+        mauza: document.getElementById('mauza').value,
+        property_category: document.getElementById('propCategory').value,
+        road_category: document.getElementById('roadCategory').value,
+        area_value: parseFloat(document.getElementById('areaValue').value),
+        area_unit: document.getElementById('areaUnit').value,
+        built_up_area_sqft: parseFloat(document.getElementById('builtUpSqft').value) || 0,
+        construction_rate_sqft: parseFloat(document.getElementById('constRate').value) || 0,
+        declared_consideration: parseFloat(document.getElementById('declaredVal').value) || 0,
+        buyer_category: document.getElementById('buyerCategory').value
+      };
+
+      try {
+        const resp = await fetch('/api/v1/valuation/calculate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        if (!resp.ok) {
+          const err = await resp.json();
+          alert('Valuation Error: ' + (err.detail || err.message || 'MVR rate lookup failed'));
+          return;
+        }
+        const data = await resp.json();
+        renderResults(data);
+      } catch (e) {
+        alert('Network or calculation failure: ' + e);
+      }
+    }
+
+    function renderResults(data) {
+      document.getElementById('dispLandVal').textContent = '₹ ' + data.calculated_land_value.toLocaleString('en-IN', {minimumFractionDigits: 2});
+      document.getElementById('dispAppliedRate').textContent = 'Applied: ₹' + data.applied_unit_rate.toLocaleString('en-IN') + ' / decimal';
+      document.getElementById('dispAssessBase').textContent = '₹ ' + data.assessment_base.toLocaleString('en-IN', {minimumFractionDigits: 2});
+      document.getElementById('dispTotalTax').textContent = '₹ ' + data.total_statutory_charges.toLocaleString('en-IN', {minimumFractionDigits: 2});
+
+      // Table rows
+      document.getElementById('rowStampRate').textContent = data.stamp_duty_rate_percent.toFixed(2) + ' %';
+      document.getElementById('rowStampBase').textContent = '₹ ' + data.assessment_base.toLocaleString('en-IN', {minimumFractionDigits: 2});
+      document.getElementById('rowStampAmt').textContent = '₹ ' + data.stamp_duty_amount.toLocaleString('en-IN', {minimumFractionDigits: 2});
+
+      document.getElementById('rowMuniRate').textContent = data.municipal_surcharge_percent.toFixed(2) + ' %';
+      document.getElementById('rowMuniBase').textContent = '₹ ' + data.assessment_base.toLocaleString('en-IN', {minimumFractionDigits: 2});
+      document.getElementById('rowMuniAmt').textContent = '₹ ' + data.municipal_surcharge_amount.toLocaleString('en-IN', {minimumFractionDigits: 2});
+
+      document.getElementById('rowRegBase').textContent = '₹ ' + data.assessment_base.toLocaleString('en-IN', {minimumFractionDigits: 2});
+      document.getElementById('rowRegAmt').textContent = '₹ ' + data.registration_fee_amount.toLocaleString('en-IN', {minimumFractionDigits: 2});
+
+      const totalRate = data.stamp_duty_rate_percent + data.municipal_surcharge_percent + data.registration_fee_rate_percent;
+      document.getElementById('rowTotalRate').textContent = totalRate.toFixed(2) + ' %';
+      document.getElementById('rowTotalBase').textContent = '₹ ' + data.assessment_base.toLocaleString('en-IN', {minimumFractionDigits: 2});
+      document.getElementById('rowTotalAmt').textContent = '₹ ' + data.total_statutory_charges.toLocaleString('en-IN', {minimumFractionDigits: 2});
+
+      // Discrepancy Card
+      const box = document.getElementById('discrepancyBox');
+      const heading = document.getElementById('discHeading');
+      const badge = document.getElementById('discBadge');
+      const exp = document.getElementById('discExplanation');
+
+      exp.textContent = data.discrepancy_explanation;
+
+      if (data.discrepancy_status === 'POTENTIAL_UNDERVALUE') {
+        box.className = 'discrepancy-card warning';
+        heading.textContent = 'POTENTIAL UNDERVALUATION DETECTED';
+        badge.className = 'badge badge-amber';
+        badge.textContent = 'Section 47-A Deficit';
+      } else if (data.discrepancy_status === 'POTENTIAL_OVERVALUATION') {
+        box.className = 'discrepancy-card info';
+        heading.textContent = 'COMMERCIAL PREMIUM OVERVALUATION';
+        badge.className = 'badge badge-cyan';
+        badge.textContent = 'Market Premium';
+      } else {
+        box.className = 'discrepancy-card success';
+        heading.textContent = 'NO DISCREPANCY DETECTED';
+        badge.className = 'badge badge-green';
+        badge.textContent = 'Consideration Compliant';
+      }
+    }
+  </script>
+</body>
+</html>
