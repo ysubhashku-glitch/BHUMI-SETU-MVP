@@ -27,13 +27,13 @@ Following the successful CI stabilization achieved in TASK-P2-06.3, this milesto
 | **Repository URL** | [https://github.com/ysubhashku-glitch/BHUMI-SETU-MVP.git](https://github.com/ysubhashku-glitch/BHUMI-SETU-MVP.git) |
 | **Target Branch** | `main` |
 | **Prior Reported Milestone** | TASK-P2-06.3 (`97c88738e040f3ecca21ab9133330cb7a35a1363`) |
-| **Code-Hardening SHA** | `1afefea4ea317c827059db930dd9ae6a457a41ec` |
-| **Authoritative Green Workflow Runs** | [Run 40457477762](https://github.com/ysubhashku-glitch/BHUMI-SETU-MVP/actions/runs/40457477762) (Code) & [Run 40458224150](https://github.com/ysubhashku-glitch/BHUMI-SETU-MVP/actions/runs/40458224150) (Docs) |
+| **Tested Pilot Release SHA** | `4d1d616d2f3c7ea7bceefb6b63ca0973b185cf11` (`4d1d616`) |
+| **Authoritative Green Workflow Run** | [Run 40473839790](https://github.com/ysubhashku-glitch/BHUMI-SETU-MVP/actions/runs/40473839790) |
 | **Workflow Status & Conclusion** | `status: completed` • **`conclusion: success`** |
-| **Host Regression Suite Passed** | **309 PASSED**, **9 SKIPPED**, **0 FAILED**, **0 ERRORS** (51.27s) |
+| **Host Regression Suite Passed** | **314 PASSED**, **9 SKIPPED**, **0 FAILED**, **0 ERRORS** (61.47s) |
 | **Alembic Database Head** | Single linear head [`c4d5e6f7a8b9`](file:///c:/Users/ysubh/OneDrive/Desktop/BHUMI%20SETU/backend/alembic/versions/c4d5e6f7a8b9_add_mutation_case_fields.py) on PostGIS 16 |
-| **Live Staging Integration Tests** | **9 PASSED**, **0 FAILED** (2.18s) |
-| **18-Step Staging Smoke Test** | **1 PASSED**, **0 FAILED** (2.30s) |
+| **Live Staging Integration Tests** | **9 PASSED**, **0 FAILED** (2.91s) |
+| **18-Step Staging Smoke Test** | **1 PASSED**, **0 FAILED** (2.27s) |
 | **Container State Persistence** | **PASSED** (PostgreSQL & MinIO data retained across container restart) |
 
 ---
@@ -204,7 +204,7 @@ A standard operating procedure (SOP) checklist for supervised pilot deployments:
 
 | Evaluation Domain | Verification Criteria | Status | Evidence & Justification |
 | :--- | :--- | :---: | :--- |
-| **CI & Migration Integrity** | Host regression suite passing; linear Alembic migrations on PostGIS 16; containerized staging integration; restart persistence. | **`PASS`** | 309 host tests passed (51.27s), 9 staging integration tests passed (2.18s), 18-step smoke test passed (2.30s), persistence verified across restart (Runs `40457477762` and `40458224150`). |
+| **CI & Migration Integrity** | Host regression suite passing; linear Alembic migrations on PostGIS 16; containerized staging integration; restart persistence. | **`PASS`** | 314 host tests passed (61.47s), 9 staging integration tests passed (2.91s), 18-step smoke test passed (2.27s), persistence verified across restart (Run `40473839790`). |
 | **Security & Tenant Isolation** | Multi-tenant org_id database filtering; role permissions; upload validation; outbound SSRF destination allowlists. | **`PASS`** | Cross-tenant access raises HTTP 403/404; Magic bytes sniffing blocks fake files; SSRF allowlist blocks private IPs and unauthorized hosts. |
 | **Official MVR Provenance** | Production calculations use only verified Collectorate gazette notifications; synthetic data blocked. | **`CONDITIONALLY READY`** | Synthetic data is strictly excluded (`GAP-VAL-SYNTHETIC-DATA-EXCLUDED`). However, live pilot deployment in target anchals requires operator import of verified gazette notifications for those specific mauzas. |
 | **Statutory Rule Validation** | Section 47-A assessment base; 5.6% female concession; 2.0% PMC municipal surcharge; 2.0% registration fee. | **`PASS`** | Deterministic `StampDutyEngine` and unit converters verified against Bihar Stamp Rules and Registration Acts. |
