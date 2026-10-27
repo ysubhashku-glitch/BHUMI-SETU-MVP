@@ -523,3 +523,99 @@ async def test_audit_08_jurisdiction_mismatch_and_expired_schedules(
             current_user=test_supervisor,
             provider_type="OPERATOR",
         )
+
+
+def test_audit_09_prohibition_of_verifying_synthetic_provider_schedules(
+    db_session: Session,
+    tenant_a: Organization,
+    test_supervisor: User,
+):
+    """
+    Verifies that even an authorized SUPERVISOR or ADMIN cannot verify
+    a schedule whose source_provider is synthetic or mock.
+    """
+    service = ValuationService()
+
+    mock_sched = MVRSchedule(
+        org_id=tenant_a.org_id,
+        schedule_code="MVR-MOCK-FORBIDDEN-01",
+        district="PATNA",
+        registration_office="Danapur",
+        anchal_circle="Danapur",
+        mauza="Mustafapur",
+        jurisdiction_type=JurisdictionType.RURAL,
+        property_category=PropertyCategory.RESIDENTIAL,
+        road_category=RoadCategory.MAIN_ROAD_NH_SH,
+        rate_per_decimal=40000.0,
+        rate_per_sqft=91.82,
+        rate_per_katha=125000.0,
+        unit_basis="DECIMAL",
+        effective_from=datetime.now(timezone.utc),
+        version_number=1,
+        is_active=True,
+        verification_status=ScheduleVerificationStatus.PROVISIONAL,
+        source_gazette_reference="Patna Collectorate Gazette 2025",
+        source_provider="MOCK_PROVIDER",
+    )
+    db_session.add(mock_sched)
+    db_session.commit()
+
+    verify_req = MVRScheduleVerifyRequest(
+        verification_status=ScheduleVerificationStatus.VERIFIED_OFFICIAL,
+        verification_notes="Attempted promotion of mock schedule",
+    )
+    with pytest.raises(ValueError, match="cannot become VERIFIED_OFFICIAL"):
+        service.verify_schedule(
+            db=db_session,
+            schedule_id=mock_sched.schedule_id,
+            verify_request=verify_req,
+            current_user=test_supervisor,
+        )
+
+
+def test_audit_10_missing_gazette_reference_rejection_in_verify_schedule(
+    db_session: Session,
+    tenant_a: Organization,
+    test_supervisor: User,
+):
+    """
+    Verifies that verify_schedule rejects schedules lacking a valid published gazette reference
+    (e.g., empty, short, or placeholder 'NONE', 'N/A', 'TEST').
+    """
+    service = ValuationService()
+
+    sched = MVRSchedule(
+        org_id=tenant_a.org_id,
+        schedule_code="MVR-NOGAZ-01",
+        district="PATNA",
+        registration_office="Danapur",
+        anchal_circle="Danapur",
+        mauza="Kotwa",
+        jurisdiction_type=JurisdictionType.RURAL,
+        property_category=PropertyCategory.AGRICULTURAL,
+        road_category=RoadCategory.RURAL_ROAD_OR_NO_ROAD,
+        rate_per_decimal=25000.0,
+        rate_per_sqft=57.39,
+        rate_per_katha=78125.0,
+        unit_basis="DECIMAL",
+        effective_from=datetime.now(timezone.utc),
+        version_number=1,
+        is_active=True,
+        verification_status=ScheduleVerificationStatus.PROVISIONAL,
+        source_gazette_reference="NONE",
+        source_provider="OPERATOR_ASSISTED_IMPORT",
+    )
+    db_session.add(sched)
+    db_session.commit()
+
+    verify_req = MVRScheduleVerifyRequest(
+        verification_status=ScheduleVerificationStatus.VERIFIED_OFFICIAL,
+        verification_notes="Attempted verification without gazette",
+    )
+    with pytest.raises(ValueError, match="cannot be verified as official without a valid gazette"):
+        service.verify_schedule(
+            db=db_session,
+            schedule_id=sched.schedule_id,
+            verify_request=verify_req,
+            current_user=test_supervisor,
+        )
