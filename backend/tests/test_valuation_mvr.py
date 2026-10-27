@@ -509,6 +509,7 @@ def test_15_duplicate_schedule_import_idempotency(
         property_category="AGRICULTURAL",
         road_category="RURAL_ROAD_OR_NO_ROAD",
         rate_per_decimal=55000.0,
+        source_gazette_reference="Patna District Gazette Notification No. 123/2025",
     )
 
     s1 = service.import_schedule(db_session, req, valuation_operator)

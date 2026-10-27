@@ -13,10 +13,14 @@ from scripts.verify_persistence import (
 )
 
 
+from tests.conftest import TEST_DATABASE_URL
+
+
 def test_verify_persistence_lifecycle(db_session, monkeypatch):
     """Verifies that seed and verify functions execute and clean up cleanly."""
-    # Ensure storage points to a local directory for test
+    # Ensure storage points to a local directory for test and database points to test db
     monkeypatch.setenv("STORAGE_ADAPTER", "local")
+    monkeypatch.setattr("scripts.verify_persistence.settings.DATABASE_URL", TEST_DATABASE_URL)
 
     # 1. Seed state
     seed_success = seed_persistence_marker()
@@ -30,7 +34,9 @@ def test_verify_persistence_lifecycle(db_session, monkeypatch):
 def test_verify_persistence_fails_when_marker_missing(monkeypatch):
     """Verifies that verify_persistence_marker returns False when markers are absent."""
     monkeypatch.setenv("STORAGE_ADAPTER", "local")
+    monkeypatch.setattr("scripts.verify_persistence.settings.DATABASE_URL", TEST_DATABASE_URL)
 
     # Calling verify without seeding should detect missing marker and return False
     res = verify_persistence_marker()
     assert res is False
+

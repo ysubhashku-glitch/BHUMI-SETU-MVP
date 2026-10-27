@@ -54,6 +54,39 @@ class ScheduleVerificationStatus(str):
     SUPERSEDED = "SUPERSEDED"
 
 
+class ValuationSourceProviderType(str):
+    OFFICIAL_GAZETTE = "OFFICIAL_GAZETTE"
+    OPERATOR_ASSISTED_IMPORT = "OPERATOR_ASSISTED_IMPORT"
+    ENIBANDHAN_PORTAL = "ENIBANDHAN_PORTAL"
+    DIRECT_GOVERNMENT_PORTAL = "DIRECT_GOVERNMENT_PORTAL"
+    MOCK_PROVIDER = "MOCK_PROVIDER"
+    SYNTHETIC_MOCK = "SYNTHETIC_MOCK"
+    SYNTHETIC_FIXTURE = "SYNTHETIC_FIXTURE"
+
+
+AUTHORIZED_OFFICIAL_VALUATION_PROVIDERS = {
+    ValuationSourceProviderType.OFFICIAL_GAZETTE,
+    ValuationSourceProviderType.OPERATOR_ASSISTED_IMPORT,
+    ValuationSourceProviderType.ENIBANDHAN_PORTAL,
+    ValuationSourceProviderType.DIRECT_GOVERNMENT_PORTAL,
+    "OFFICIAL_GAZETTE",
+    "OPERATOR_ASSISTED_IMPORT",
+    "ENIBANDHAN_PORTAL",
+    "DIRECT_GOVERNMENT_PORTAL",
+}
+
+SYNTHETIC_MOCK_VALUATION_PROVIDERS = {
+    ValuationSourceProviderType.MOCK_PROVIDER,
+    ValuationSourceProviderType.SYNTHETIC_MOCK,
+    ValuationSourceProviderType.SYNTHETIC_FIXTURE,
+    "MOCK_PROVIDER",
+    "SYNTHETIC_MOCK",
+    "SYNTHETIC_FIXTURE",
+    "SIMULATION",
+    "TEST",
+}
+
+
 class DiscrepancyStatus(str):
     NO_DISCREPANCY_DETECTED = "NO_DISCREPANCY_DETECTED"
     POTENTIAL_UNDERVALUE = "POTENTIAL_UNDERVALUE"
@@ -102,7 +135,7 @@ class MVRSchedule(Base):
     effective_to = sa.Column(sa.DateTime(timezone=True), nullable=True)
     version_number = sa.Column(sa.Integer, nullable=False, default=1)
     is_active = sa.Column(sa.Boolean, nullable=False, default=True)
-    verification_status = sa.Column(sa.String(32), nullable=False, default=ScheduleVerificationStatus.VERIFIED_OFFICIAL)
+    verification_status = sa.Column(sa.String(32), nullable=False, default=ScheduleVerificationStatus.PROVISIONAL)
     
     source_gazette_reference = sa.Column(sa.String(256), nullable=True)
     source_url = sa.Column(sa.String(512), nullable=True)

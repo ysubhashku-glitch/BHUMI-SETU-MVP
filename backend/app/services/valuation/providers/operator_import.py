@@ -73,6 +73,12 @@ class OperatorImportValuationProvider(ValuationSourceProvider):
         if not district or not anchal or not mauza:
             raise InvalidJurisdictionError("District, Anchal, and Mauza must be non-empty.")
 
+        gazette_ref = (request.source_gazette_reference or "").strip()
+        if not gazette_ref or len(gazette_ref) < 5 or gazette_ref.upper() in ("NONE", "N/A", "NULL", "TEST"):
+            raise ValueError(
+                "Official gazette notification reference is required for circle rate schedule import."
+            )
+
         if request.rate_per_decimal <= 0:
             raise ValueError(f"Rate per decimal must be positive, got {request.rate_per_decimal}")
 
@@ -114,8 +120,8 @@ class OperatorImportValuationProvider(ValuationSourceProvider):
             effective_from=request.effective_from or datetime.now(timezone.utc),
             version_number=version,
             is_active=True,
-            verification_status=ScheduleVerificationStatus.VERIFIED_OFFICIAL,
-            source_gazette_reference=request.source_gazette_reference,
+            verification_status=ScheduleVerificationStatus.PROVISIONAL,
+            source_gazette_reference=gazette_ref,
             source_url=request.source_url,
             source_provider=self.provider_id,
         )

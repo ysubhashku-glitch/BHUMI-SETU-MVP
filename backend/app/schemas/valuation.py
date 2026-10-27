@@ -44,7 +44,7 @@ class MVRScheduleRecord(BaseModel):
     effective_to: Optional[Union[datetime, date]] = None
     version_number: int = 1
     is_active: bool = True
-    verification_status: str = "VERIFIED_OFFICIAL"
+    verification_status: str = "PROVISIONAL"
     source_gazette_reference: Optional[str] = None
     source_url: Optional[str] = None
     source_provider: str = "OFFICIAL_GAZETTE"

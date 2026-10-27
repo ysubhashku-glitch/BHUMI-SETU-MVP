@@ -11,12 +11,14 @@ import uuid
 import logging
 from datetime import datetime, timezone
 from typing import Dict, Any, List, Optional
+import sqlalchemy as sa
 from sqlalchemy.orm import Session
 
 from app.models.base import utc_now
 from app.models.case import Case
 from app.models.parcel import Parcel
-from app.models.user import User
+from app.models.user import User, UserRole
+from app.models.audit import AuditLog
 from app.models.valuation import (
     MVRSchedule,
     PropertyValuation,
@@ -25,8 +27,11 @@ from app.models.valuation import (
     JurisdictionType,
     ScheduleVerificationStatus,
     DiscrepancyStatus,
+    AUTHORIZED_OFFICIAL_VALUATION_PROVIDERS,
+    SYNTHETIC_MOCK_VALUATION_PROVIDERS,
+    ValuationSourceProviderType,
 )
-from app.core.exceptions import EntityNotFoundError, CrossTenantAccessError
+from app.core.exceptions import EntityNotFoundError, CrossTenantAccessError, ForbiddenError
 from app.schemas.valuation import (
     MVRScheduleRecord,
     MVRScheduleCreateRequest,
@@ -43,6 +48,7 @@ from app.services.valuation.providers import (
     OperatorImportValuationProvider,
     SEED_MVR_SCHEDULES,
     MVRRateNotFoundError,
+    InvalidJurisdictionError,
 )
 from app.services.valuation.valuation_engine import ValuationEngine
 from app.services.valuation.stamp_duty_engine import StampDutyEngine
@@ -127,30 +133,68 @@ class ValuationService:
                 raise EntityNotFoundError("Parcel", request.parcel_id)
             self._verify_tenant_access(target_parcel.org_id, current_user, "Parcel")
 
+            # Check jurisdiction match between request and parcel
+            if target_parcel.district:
+                p_dist = target_parcel.district.strip().upper()
+                r_dist = request.district.strip().upper()
+                if p_dist != r_dist:
+                    raise InvalidJurisdictionError(
+                        f"Valuation request district '{request.district}' does not match parcel district '{target_parcel.district}'."
+                    )
+            if target_parcel.circle:
+                p_circle = target_parcel.circle.strip().upper()
+                r_circle = request.anchal_circle.strip().upper()
+                if p_circle != r_circle:
+                    raise InvalidJurisdictionError(
+                        f"Valuation request circle '{request.anchal_circle}' does not match parcel circle '{target_parcel.circle}'."
+                    )
+            if target_parcel.mauza:
+                p_mauza = target_parcel.mauza.strip().upper()
+                r_mauza = request.mauza.strip().upper()
+                if p_mauza != r_mauza:
+                    raise InvalidJurisdictionError(
+                        f"Valuation request mauza '{request.mauza}' does not match parcel mauza '{target_parcel.mauza}'."
+                    )
+
         # 2. Lookup matching MVR Schedule
         req_district = request.district.strip().upper()
         req_anchal = request.anchal_circle.strip().upper()
         req_mauza = request.mauza.strip().upper()
         req_cat = request.property_category.strip().upper()
         req_road = request.road_category.strip().upper()
+        val_date = request.valuation_date or utc_now()
 
-        schedule = db.query(MVRSchedule).filter(
+        # Query active, non-superseded schedules matching jurisdiction and effective dates
+        schedule_query = db.query(MVRSchedule).filter(
             MVRSchedule.district == req_district,
             MVRSchedule.is_active == True,
+            MVRSchedule.verification_status != ScheduleVerificationStatus.SUPERSEDED,
+            MVRSchedule.effective_from <= val_date,
+            sa.or_(MVRSchedule.effective_to.is_(None), MVRSchedule.effective_to >= val_date),
         )
 
-        # Match anchal and mauza
-        db_schedules = schedule.all()
-        matched_schedule: Optional[MVRSchedule] = None
+        db_schedules = schedule_query.all()
+        exact_match: Optional[MVRSchedule] = None
+        fallback_match: Optional[MVRSchedule] = None
 
+        # Prefer exact match with road category, prioritizing VERIFIED_OFFICIAL
         for s in db_schedules:
             if s.anchal_circle.upper() == req_anchal and s.mauza.upper() == req_mauza:
                 if s.property_category.upper() == req_cat:
                     if s.road_category.upper() == req_road:
-                        matched_schedule = s
-                        break
-                    elif not matched_schedule:
-                        matched_schedule = s
+                        if not exact_match or (
+                            s.verification_status == ScheduleVerificationStatus.VERIFIED_OFFICIAL
+                            and exact_match.verification_status != ScheduleVerificationStatus.VERIFIED_OFFICIAL
+                        ):
+                            exact_match = s
+                    else:
+                        if not fallback_match or (
+                            s.verification_status == ScheduleVerificationStatus.VERIFIED_OFFICIAL
+                            and fallback_match.verification_status != ScheduleVerificationStatus.VERIFIED_OFFICIAL
+                        ):
+                            fallback_match = s
+
+        matched_schedule = exact_match or fallback_match
 
         # If not found in DB, try provider
         if not matched_schedule:
@@ -166,6 +210,19 @@ class ValuationService:
             )
             if p_schedules:
                 p_rec = p_schedules[0]
+                source_prov = (p_rec.source_provider or "MOCK_PROVIDER").upper()
+                is_mock_provider = (
+                    source_prov in SYNTHETIC_MOCK_VALUATION_PROVIDERS
+                    or "MOCK" in source_prov
+                    or "SYNTH" in source_prov
+                    or "mock" in p_rec.schedule_code.lower()
+                    or "synth" in p_rec.schedule_code.lower()
+                )
+                ver_status = (
+                    ScheduleVerificationStatus.PROVISIONAL
+                    if is_mock_provider
+                    else p_rec.verification_status
+                )
                 matched_schedule = MVRSchedule(
                     schedule_id=uuid.uuid4(),
                     schedule_code=p_rec.schedule_code,
@@ -185,7 +242,7 @@ class ValuationService:
                     effective_from=p_rec.effective_from,
                     version_number=p_rec.version_number,
                     is_active=True,
-                    verification_status=p_rec.verification_status,
+                    verification_status=ver_status,
                     source_gazette_reference=p_rec.source_gazette_reference,
                     source_url=p_rec.source_url,
                     source_provider=p_rec.source_provider,
@@ -304,12 +361,14 @@ class ValuationService:
     ) -> MVRScheduleRecord:
         """
         Ingests an official circle rate schedule via operator workflow.
+        Newly imported schedules enter as PROVISIONAL pending supervisor verification.
         """
         import_provider = OperatorImportValuationProvider()
         record = import_provider.normalize_and_register(request, operator_user_id=str(current_user.user_id))
 
         # Check existing by schedule_code
         db_sched = db.query(MVRSchedule).filter(MVRSchedule.schedule_code == record.schedule_code).first()
+        prev_state = None
         if not db_sched:
             db_sched = MVRSchedule(
                 schedule_id=uuid.uuid4(),
@@ -331,7 +390,7 @@ class ValuationService:
                 effective_from=record.effective_from,
                 version_number=record.version_number,
                 is_active=True,
-                verification_status=record.verification_status,
+                verification_status=ScheduleVerificationStatus.PROVISIONAL,
                 source_gazette_reference=record.source_gazette_reference,
                 source_url=record.source_url,
                 source_provider="OPERATOR_ASSISTED_IMPORT",
@@ -340,12 +399,39 @@ class ValuationService:
             db.add(db_sched)
         else:
             self._verify_tenant_access(db_sched.org_id, current_user, "MVRSchedule")
+            prev_state = {
+                "rate_per_decimal": float(db_sched.rate_per_decimal),
+                "verification_status": db_sched.verification_status,
+                "version_number": db_sched.version_number,
+            }
             db_sched.rate_per_decimal = record.rate_per_decimal
             db_sched.rate_per_sqft = record.rate_per_sqft
             db_sched.rate_per_katha = record.rate_per_katha
             db_sched.effective_from = record.effective_from
             db_sched.source_gazette_reference = record.source_gazette_reference
+            db_sched.verification_status = ScheduleVerificationStatus.PROVISIONAL
+            db_sched.version_number += 1
 
+        db.flush()
+
+        audit = AuditLog(
+            log_id=uuid.uuid4(),
+            org_id=current_user.org_id or db_sched.org_id or uuid.UUID("00000000-0000-0000-0000-000000000001"),
+            actor_party_id=current_user.user_id,
+            action="MVR_SCHEDULE_IMPORTED",
+            entity_name="MVRSchedule",
+            entity_id=db_sched.schedule_id,
+            previous_state=prev_state,
+            new_state={
+                "schedule_code": db_sched.schedule_code,
+                "verification_status": db_sched.verification_status,
+                "district": db_sched.district,
+                "mauza": db_sched.mauza,
+                "rate_per_decimal": float(db_sched.rate_per_decimal),
+                "source_gazette_reference": db_sched.source_gazette_reference,
+            },
+        )
+        db.add(audit)
         db.commit()
         db.refresh(db_sched)
         return MVRScheduleRecord.model_validate(db_sched)
@@ -359,13 +445,81 @@ class ValuationService:
     ) -> MVRScheduleRecord:
         """
         Updates verification status of an MVR schedule.
+        Restricted to ADMIN or SUPERVISOR roles.
+        Enforces that synthetic/mock schedules cannot be verified as official.
         """
+        if current_user.role not in (UserRole.ADMIN, UserRole.SUPERVISOR):
+            audit = AuditLog(
+                log_id=uuid.uuid4(),
+                org_id=current_user.org_id or uuid.UUID("00000000-0000-0000-0000-000000000001"),
+                actor_party_id=current_user.user_id,
+                action="MVR_SCHEDULE_VERIFY_UNAUTHORIZED",
+                entity_name="MVRSchedule",
+                entity_id=schedule_id,
+                previous_state=None,
+                new_state={
+                    "attempted_status": verify_request.verification_status,
+                    "user_role": current_user.role.value if hasattr(current_user.role, "value") else str(current_user.role),
+                },
+            )
+            db.add(audit)
+            db.commit()
+            raise ForbiddenError("Only ADMIN or SUPERVISOR can verify MVR schedules.")
+
         sched = db.query(MVRSchedule).filter(MVRSchedule.schedule_id == schedule_id).first()
         if not sched:
             raise EntityNotFoundError("MVRSchedule", schedule_id)
         self._verify_tenant_access(sched.org_id, current_user, "MVRSchedule")
 
-        sched.verification_status = verify_request.verification_status
+        prev_status = sched.verification_status
+        new_status = verify_request.verification_status.strip().upper()
+
+        if new_status == ScheduleVerificationStatus.VERIFIED_OFFICIAL:
+            source_prov = (sched.source_provider or "").upper()
+            is_mock_or_synth = (
+                source_prov in SYNTHETIC_MOCK_VALUATION_PROVIDERS
+                or "MOCK" in source_prov
+                or "SYNTH" in source_prov
+                or "mock" in sched.schedule_code.lower()
+                or "synth" in sched.schedule_code.lower()
+            )
+            if is_mock_or_synth:
+                raise ValueError(
+                    f"Schedule '{sched.schedule_code}' is derived from '{sched.source_provider}' and cannot become VERIFIED_OFFICIAL."
+                )
+
+            if source_prov not in AUTHORIZED_OFFICIAL_VALUATION_PROVIDERS:
+                raise ValueError(
+                    f"Schedule source provider '{sched.source_provider}' is not an authorized official government registry."
+                )
+
+            gaz_ref = (sched.source_gazette_reference or "").strip()
+            if not gaz_ref or len(gaz_ref) < 5 or gaz_ref.upper() in ("NONE", "N/A", "NULL", "TEST"):
+                raise ValueError(
+                    f"Schedule '{sched.schedule_code}' cannot be verified as official without a valid gazette notification reference."
+                )
+
+        sched.verification_status = new_status
+        if new_status == ScheduleVerificationStatus.SUPERSEDED:
+            sched.is_active = False
+        elif new_status == ScheduleVerificationStatus.UNVERIFIED:
+            sched.is_active = False
+
+        audit = AuditLog(
+            log_id=uuid.uuid4(),
+            org_id=current_user.org_id or sched.org_id or uuid.UUID("00000000-0000-0000-0000-000000000001"),
+            actor_party_id=current_user.user_id,
+            action=f"MVR_SCHEDULE_{new_status}",
+            entity_name="MVRSchedule",
+            entity_id=sched.schedule_id,
+            previous_state={"verification_status": prev_status, "is_active": sched.is_active},
+            new_state={
+                "verification_status": new_status,
+                "is_active": sched.is_active,
+                "notes": verify_request.verification_notes,
+            },
+        )
+        db.add(audit)
         db.commit()
         db.refresh(sched)
         return MVRScheduleRecord.model_validate(sched)

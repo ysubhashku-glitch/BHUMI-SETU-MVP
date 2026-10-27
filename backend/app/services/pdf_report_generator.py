@@ -517,28 +517,33 @@ def generate_land_intelligence_pdf(data: ReportDataStructure) -> bytes:
     # =========================================================================
     # SECTION VALUATION: BIHAR MVR CIRCLE RATE & STAMP DUTY VALUATION
     # =========================================================================
-    if data.section_valuation and data.section_valuation.valuations:
+    if data.section_valuation:
         v_data = data.section_valuation
         pdf.section_header(
             "Valuation Intelligence — Bihar MVR Circle Rate & Statutory Taxes",
-            f"Official circle rate valuation & Section 47-A stamp duty breakdown ({len(v_data.valuations)} assessed records)"
+            f"Official circle rate valuation & Section 47-A stamp duty breakdown ({len(v_data.valuations)} assessed records)" if v_data.valuations else "Official circle rate valuation & Section 47-A stamp duty assessment"
         )
-        with pdf.table(col_widths=(45, 30, 35, 40, 40), text_align="L", line_height=5, headings_style=table_head) as table:
-            row = table.row()
-            row.cell("Jurisdiction & MVR Code")
-            row.cell("Area & Category")
-            row.cell("Guideline Land Value")
-            row.cell("Stamp Duty & Reg Fee")
-            row.cell("Discrepancy Status")
+        if v_data.valuations:
+            with pdf.table(col_widths=(45, 30, 35, 40, 40), text_align="L", line_height=5, headings_style=table_head) as table:
+                row = table.row()
+                row.cell("Jurisdiction & MVR Code")
+                row.cell("Area & Category")
+                row.cell("Guideline Land Value")
+                row.cell("Stamp Duty & Reg Fee")
+                row.cell("Discrepancy Status")
 
-            for v_item in v_data.valuations[:4]:
-                r = table.row()
-                r.cell(f"{pdf.sanitize(v_item.district)} / {pdf.sanitize(v_item.anchal_circle)}\nMauza: {pdf.sanitize(v_item.mauza)}")
-                r.cell(f"{v_item.total_area_decimal:.2f} Decimals\nCat: {v_item.property_category}")
-                r.cell(f"Land: Rs. {v_item.calculated_land_value:,.2f}\nRate: Rs. {v_item.unit_circle_rate:,.2f}/dec")
-                r.cell(f"Duty: Rs. {v_item.stamp_duty_amount:,.2f} ({v_item.stamp_duty_rate_percent}%)\nReg: Rs. {v_item.registration_fee_amount:,.2f}")
-                r.cell(f"Status: {v_item.discrepancy_status}\nBase: Rs. {v_item.assessment_base:,.2f}")
-        pdf.ln(1)
+                for v_item in v_data.valuations[:4]:
+                    r = table.row()
+                    r.cell(f"{pdf.sanitize(v_item.district)} / {pdf.sanitize(v_item.anchal_circle)}\nMauza: {pdf.sanitize(v_item.mauza)}")
+                    r.cell(f"{v_item.total_area_decimal:.2f} Decimals\nCat: {v_item.property_category}")
+                    r.cell(f"Land: Rs. {v_item.calculated_land_value:,.2f}\nRate: Rs. {v_item.unit_circle_rate:,.2f}/dec")
+                    r.cell(f"Duty: Rs. {v_item.stamp_duty_amount:,.2f} ({v_item.stamp_duty_rate_percent}%)\nReg: Rs. {v_item.registration_fee_amount:,.2f}")
+                    r.cell(f"Status: {v_item.discrepancy_status}\nBase: Rs. {v_item.assessment_base:,.2f}")
+            pdf.ln(1)
+        else:
+            pdf.set_font(pdf.unicode_font_name, size=8)
+            pdf.cell(190, 6, "NO OFFICIAL VALUATION ADMITTED: Official published Collectorate schedule not verified or synthetic data excluded.", border=1, new_x=XPos.LMARGIN, new_y=YPos.NEXT)
+            pdf.ln(1)
 
         # Statutory Valuation Limitation Statement
         pdf.set_font(pdf.unicode_font_name, size=6)

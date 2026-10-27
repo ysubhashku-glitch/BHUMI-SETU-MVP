@@ -31,10 +31,15 @@ from app.models.case import Case
 from app.models.claim import Claim, ClaimPredicate
 from app.models.evidence import Evidence, CaseEvidence, Document, ExtractedField
 from app.models.field_survey import FieldSurvey
-from app.models.field_task import FieldVerificationTask
 from app.models.judicial import JudicialCase, ParcelJudicialMatch
-from app.models.valuation import PropertyValuation, MVRSchedule
 from app.models.spatial_overlay import BoundaryOverlayAnalysis, CadastralParcelGeometry
+from app.models.valuation import (
+    PropertyValuation,
+    MVRSchedule,
+    ScheduleVerificationStatus,
+    AUTHORIZED_OFFICIAL_VALUATION_PROVIDERS,
+    SYNTHETIC_MOCK_VALUATION_PROVIDERS,
+)
 from app.models.mutation import (
     MutationCase,
     MutationEvent,
@@ -607,7 +612,7 @@ class EvidenceReconciliationEngine:
         # -----------------------------------------------------------------
         valuations = db.query(PropertyValuation).filter(
             PropertyValuation.parcel_id == parcel.parcel_id,
-        ).all()
+        ).order_by(PropertyValuation.valuation_date.desc(), PropertyValuation.created_at.desc()).all()
 
         if valuations:
             has_admitted_val = False
@@ -615,26 +620,107 @@ class EvidenceReconciliationEngine:
                 sched = db.query(MVRSchedule).filter(MVRSchedule.schedule_id == val.schedule_id).first()
                 sched_ver = sched.verification_status if sched else "UNVERIFIED"
 
-                # Upstream validation gate: Synthetic data handling
+                # Gate A: Synthetic data handling and mock provider exclusion
                 source_prov = (getattr(sched, "source_provider", "") or "").upper() if sched else ""
                 is_synthetic = (
                     (sched_ver in ("SYNTHETIC", "SYNTHETIC_MOCK", "SYNTHETIC_FIXTURE"))
-                    or (sched and source_prov in ("MOCK_PROVIDER", "SYNTHETIC_MOCK", "SYNTHETIC_FIXTURE"))
+                    or (sched and source_prov in SYNTHETIC_MOCK_VALUATION_PROVIDERS)
                     or (sched and "MOCK" in source_prov)
                     or (sched and "SYNTH" in source_prov)
                     or ("mock" in (sched.schedule_code.lower() if sched else ""))
                     or ("synth" in (sched.schedule_code.lower() if sched else ""))
                 )
-                if is_synthetic and not include_synthetic_fixtures:
-                    evidence_gaps.append({
-                        "subsystem": "VALUATION",
-                        "gap_code": "GAP-VAL-SYNTHETIC-DATA-EXCLUDED",
-                        "description": f"MVR valuation schedule '{sched.schedule_code if sched else 'UNKNOWN'}' is synthetic and excluded from production assessment.",
-                        "impact_on_assessment": "Valuation relies on synthetic fixtures; official published Collectorate schedule required.",
-                        "remedy_action": "Import verified official MVR circle rate schedule for this mauza.",
-                        "is_blocking": True,
-                    })
-                    continue  # Exclude synthetic fixture from production assessment per rule 6B
+                if is_synthetic:
+                    if not include_synthetic_fixtures:
+                        evidence_gaps.append({
+                            "subsystem": "VALUATION",
+                            "gap_code": "GAP-VAL-SYNTHETIC-DATA-EXCLUDED",
+                            "description": f"MVR valuation schedule '{sched.schedule_code if sched else 'UNKNOWN'}' is synthetic and excluded from production assessment.",
+                            "impact_on_assessment": "Valuation relies on synthetic fixtures; official published Collectorate schedule required.",
+                            "remedy_action": "Import verified official MVR circle rate schedule for this mauza.",
+                            "is_blocking": True,
+                        })
+                        continue
+                else:
+                    # Gates B through G: Enforce provenance on official schedules
+                    # Gate B: Unknown / Untrusted Provider Check
+                    if sched and source_prov not in AUTHORIZED_OFFICIAL_VALUATION_PROVIDERS:
+                        evidence_gaps.append({
+                            "subsystem": "VALUATION",
+                            "gap_code": "GAP-VAL-UNTRUSTED-PROVIDER",
+                            "description": f"MVR schedule '{sched.schedule_code}' source provider '{sched.source_provider}' is not an authorized official government registry source.",
+                            "impact_on_assessment": "Circle rates from unverified third-party sources cannot support authoritative valuation.",
+                            "remedy_action": "Source circle rate notification directly from District Collectorate or e-Nibandhan portal.",
+                            "is_blocking": True,
+                        })
+                        continue
+
+                    # Gate C: Missing Source Gazette Notification Reference
+                    gazette_ref = (getattr(sched, "source_gazette_reference", "") or "").strip()
+                    if not gazette_ref or len(gazette_ref) < 5 or gazette_ref.upper() in ("NONE", "N/A", "NULL", "TEST"):
+                        evidence_gaps.append({
+                            "subsystem": "VALUATION",
+                            "gap_code": "GAP-VAL-MISSING-GAZETTE-REFERENCE",
+                            "description": f"MVR valuation schedule '{sched.schedule_code if sched else 'UNKNOWN'}' lacks an official gazette notification reference.",
+                            "impact_on_assessment": "Valuation provenance incomplete; statutory circle rates require published gazette citation.",
+                            "remedy_action": "Record official gazette notification number and issuing date in schedule metadata.",
+                            "is_blocking": True,
+                        })
+                        continue
+
+                    # Gate D: Superseded or Inactive Schedule
+                    if sched and (sched_ver == ScheduleVerificationStatus.SUPERSEDED or not sched.is_active):
+                        evidence_gaps.append({
+                            "subsystem": "VALUATION",
+                            "gap_code": "GAP-VAL-SUPERSEDED-SCHEDULE",
+                            "description": f"MVR schedule '{sched.schedule_code}' has been superseded or deactivated.",
+                            "impact_on_assessment": "Valuation was calculated with outdated rates; recalculation required with active schedule.",
+                            "remedy_action": "Trigger valuation recalculation using current published circle rate schedule.",
+                            "is_blocking": True,
+                        })
+                        continue
+
+                    # Gate E: Expired Schedule
+                    if sched and sched.effective_to and val.valuation_date and val.valuation_date > sched.effective_to:
+                        evidence_gaps.append({
+                            "subsystem": "VALUATION",
+                            "gap_code": "GAP-VAL-EXPIRED-SCHEDULE",
+                            "description": f"MVR schedule '{sched.schedule_code}' expired on {sched.effective_to.strftime('%Y-%m-%d')} before valuation date {val.valuation_date.strftime('%Y-%m-%d')}.",
+                            "impact_on_assessment": "Valuation relied on expired schedule; current rate schedule required.",
+                            "remedy_action": "Obtain current circle rate notification and recalculate valuation.",
+                            "is_blocking": True,
+                        })
+                        continue
+
+                    # Gate F: Unverified / Provisional Status
+                    if sched_ver in (ScheduleVerificationStatus.UNVERIFIED, ScheduleVerificationStatus.PROVISIONAL):
+                        evidence_gaps.append({
+                            "subsystem": "VALUATION",
+                            "gap_code": "GAP-VAL-UNVERIFIED-SCHEDULE",
+                            "description": f"MVR schedule '{sched.schedule_code if sched else 'UNKNOWN'}' is {sched_ver} and has not completed supervisor verification.",
+                            "impact_on_assessment": "Provisional schedules cannot establish authoritative government valuation.",
+                            "remedy_action": "Supervisor or Admin must review and approve schedule via verification workflow.",
+                            "is_blocking": True,
+                        })
+                        continue
+
+                    # Gate G: Jurisdiction Mismatch between Schedule and Parcel
+                    if sched and parcel:
+                        sched_dist = (sched.district or "").strip().upper()
+                        parcel_dist = (parcel.district or "").strip().upper()
+                        sched_mauza = (sched.mauza or "").strip().upper()
+                        parcel_mauza = (parcel.mauza or "").strip().upper()
+
+                        if (parcel_dist and sched_dist != parcel_dist) or (parcel_mauza and sched_mauza != parcel_mauza):
+                            evidence_gaps.append({
+                                "subsystem": "VALUATION",
+                                "gap_code": "GAP-VAL-JURISDICTION-MISMATCH",
+                                "description": f"Valuation schedule jurisdiction ({sched.district}/{sched.mauza}) does not match parcel jurisdiction ({parcel.district}/{parcel.mauza}).",
+                                "impact_on_assessment": "Circle rate applied is from a different administrative mauza or district.",
+                                "remedy_action": "Reassign valuation to matching mauza schedule.",
+                                "is_blocking": True,
+                            })
+                            continue
 
                 has_admitted_val = True
                 facts.append({
@@ -678,7 +764,11 @@ class EvidenceReconciliationEngine:
                         "requires_human_review": False,
                     })
 
-            if not has_admitted_val and not any(g["gap_code"] == "GAP-VAL-SYNTHETIC-DATA-EXCLUDED" for g in evidence_gaps):
+            has_val_blocking_gap = any(
+                g.get("subsystem") == "VALUATION" and g.get("is_blocking") is True
+                for g in evidence_gaps
+            )
+            if not has_admitted_val and not has_val_blocking_gap:
                 evidence_gaps.append({
                     "subsystem": "VALUATION",
                     "gap_code": "GAP-VAL-NO-ASSESSMENT",
