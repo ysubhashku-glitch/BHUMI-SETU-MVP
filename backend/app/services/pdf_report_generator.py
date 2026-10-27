@@ -582,6 +582,105 @@ def generate_land_intelligence_pdf(data: ReportDataStructure) -> bytes:
         pdf.ln(2)
 
     # =========================================================================
+    # SECTION SYNTHESIS: PROPERTY PASSPORT & RISK DILIGENCE SYNTHESIS
+    # =========================================================================
+    if data.section_synthesis and data.section_synthesis.is_synthesized:
+        s_data = data.section_synthesis
+        pdf.section_header(
+            "Property Passport Synthesis — Multi-Dimensional Risk Intelligence",
+            f"Consolidated due diligence across 8 dimensions (Assessment: {s_data.assessment_number or 'N/A'}, Ver: v{s_data.version_number})"
+        )
+
+        # Executive Risk Tier Badge & Metric Summary Box
+        curr_y = pdf.get_y()
+        tier_fill = (241, 245, 249)
+        tier_text = (30, 41, 59)
+        tier_name = s_data.overall_risk_tier.upper()
+        if "CRITICAL" in tier_name:
+            tier_fill = (254, 226, 226)
+            tier_text = (153, 27, 27)
+        elif "HIGH" in tier_name:
+            tier_fill = (254, 240, 138)
+            tier_text = (133, 77, 14)
+        elif "MEDIUM" in tier_name:
+            tier_fill = (254, 249, 195)
+            tier_text = (113, 63, 18)
+        elif "LOW" in tier_name:
+            tier_fill = (220, 252, 231)
+            tier_text = (22, 101, 52)
+        elif "INSUFFICIENT" in tier_name:
+            tier_fill = (224, 231, 255)
+            tier_text = (49, 46, 129)
+
+        pdf.set_fill_color(*tier_fill)
+        pdf.set_draw_color(203, 213, 225)
+        pdf.rect(10, curr_y, 190, 16, "FD")
+
+        pdf.set_xy(14, curr_y + 3)
+        pdf.set_font(pdf.unicode_font_name, "B", size=10.5)
+        pdf.set_text_color(*tier_text)
+        pdf.cell(90, 5, f"OVERALL DILIGENCE TIER: {tier_name}")
+
+        pdf.set_xy(110, curr_y + 3)
+        pdf.set_font(pdf.unicode_font_name, "B", size=9.5)
+        pdf.set_text_color(30, 41, 59)
+        pdf.cell(85, 5, f"Review Priority Index: {s_data.composite_priority_score:.2f} / 100.00", align="R")
+
+        pdf.set_xy(14, curr_y + 9)
+        pdf.set_font(pdf.unicode_font_name, size=7.5)
+        pdf.set_text_color(71, 85, 105)
+        digest_str = f"Digest: {s_data.sha256_snapshot_hash[:16]}..." if s_data.sha256_snapshot_hash else "Digest: N/A"
+        date_str = f"Assessed: {s_data.assessment_date or 'N/A'}"
+        counts_str = f"Facts: {s_data.facts_count}  |  Inferences: {s_data.inferences_count}  |  Findings: {s_data.findings_count}  |  Gaps: {s_data.gaps_count}"
+        pdf.cell(180, 4, f"{date_str}   •   {digest_str}   •   {counts_str}")
+        pdf.set_y(curr_y + 18)
+
+        # 8-Dimension Risk Table
+        if s_data.dimension_scores:
+            with pdf.table(col_widths=(60, 25, 25, 45, 35), text_align="L", line_height=4.8, headings_style=table_head) as table:
+                row = table.row()
+                row.cell("Risk Dimension")
+                row.cell("Weight")
+                row.cell("Priority Score")
+                row.cell("Status Evaluation")
+                row.cell("Findings Count")
+
+                for ds in s_data.dimension_scores:
+                    r = table.row()
+                    r.cell(pdf.sanitize(ds.dimension_name or ds.dimension))
+                    r.cell(f"{ds.weight * 100:.1f}%")
+                    r.cell(f"{ds.score:.2f}")
+                    r.cell(pdf.sanitize(ds.status))
+                    r.cell(str(ds.findings_count))
+            pdf.ln(1)
+
+        # Explicit Evidence Gaps (Highlights what is missing, preventing false negative assumptions)
+        if s_data.evidence_gaps:
+            pdf.set_font(pdf.unicode_font_name, "B", size=8)
+            pdf.set_text_color(180, 83, 9)
+            pdf.cell(190, 4.5, f"Unresolved Evidence Gaps ({len(s_data.evidence_gaps)} identified):", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
+            with pdf.table(col_widths=(45, 45, 55, 45), text_align="L", line_height=4.5, headings_style=table_head) as table:
+                row = table.row()
+                row.cell("Gap Code")
+                row.cell("Dimension")
+                row.cell("Description")
+                row.cell("Recommended Remedy")
+
+                for eg in s_data.evidence_gaps[:4]:
+                    r = table.row()
+                    r.cell(pdf.sanitize(eg.gap_code))
+                    r.cell(pdf.sanitize(eg.dimension))
+                    r.cell(pdf.sanitize(eg.description)[:45])
+                    r.cell(pdf.sanitize(eg.remedy_action)[:35])
+            pdf.ln(1)
+
+        # Statutory Synthesis Disclaimer Box
+        pdf.set_font(pdf.unicode_font_name, size=6)
+        pdf.set_text_color(100, 116, 139)
+        pdf.multi_cell(190, 2.7, s_data.statutory_disclaimer, border=1)
+        pdf.ln(2)
+
+    # =========================================================================
     # SECTION 8: FINDINGS, ACTIONS, QR CODE & DISCLAIMER
     # =========================================================================
     pdf.section_header("Section 8 — Findings, Next Actions & Cryptographic Verification", "Final synthesis, recommended due diligence actions, and tamper-evident verification")

@@ -30,6 +30,7 @@ class GroundControlPoint(BaseModel):
     ground_x: float = Field(..., description="Real-world Easting in EPSG:32645 (or Lon in EPSG:4326)")
     ground_y: float = Field(..., description="Real-world Northing in EPSG:32645 (or Lat in EPSG:4326)")
     is_active: bool = True
+    is_check_point: bool = Field(default=False, description="True if point is an independent check-point (ICP) not used in transformation fitting")
     residual_x: Optional[float] = None
     residual_y: Optional[float] = None
     residual_total: Optional[float] = None
@@ -43,6 +44,11 @@ class GeoreferenceSolveResult(BaseModel):
     residuals: List[Dict[str, Any]]
     rmse_meters: float
     max_residual_meters: float
+    fitting_rmse_meters: Optional[float] = None
+    checkpoint_rmse_meters: Optional[float] = None
+    max_checkpoint_residual_meters: Optional[float] = None
+    check_points_used: int = 0
+    checkpoint_residuals: List[Dict[str, Any]] = Field(default_factory=list)
     is_acceptable: bool
     quality_assessment: str
     warnings: List[str] = Field(default_factory=list)
@@ -96,19 +102,27 @@ def _invert_3x3_matrix(M: List[List[float]]) -> List[List[float]]:
     return adj
 
 
-def solve_affine_transformation(gcps: List[GroundControlPoint]) -> Dict[str, Any]:
+def solve_affine_transformation(
+    gcps: List[GroundControlPoint],
+    check_points: Optional[List[GroundControlPoint]] = None
+) -> Dict[str, Any]:
     """
     Solves 6-parameter Affine transformation by Ordinary Least Squares (OLS):
         X = a*u + b*v + c
         Y = d*u + e*v + f
     Requires at least 3 non-collinear GCPs. Recommends at least 4.
+    Distinguishes fitting residuals from independent check-point (ICP) errors.
     """
-    active_gcps = [p for p in gcps if p.is_active]
+    active_gcps = [p for p in gcps if p.is_active and not getattr(p, "is_check_point", False)]
     N = len(active_gcps)
     if N < 3:
         raise GeoreferencingError(
             f"Affine transformation requires at least 3 active control points. Provided: {N}"
         )
+
+    # Resolve independent check points
+    icps = [p for p in (check_points or []) if p.is_active]
+    icps.extend([p for p in gcps if p.is_active and getattr(p, "is_check_point", False)])
 
     # Compute summations for normal matrix (A^T A)
     sum_u = sum(p.image_u for p in active_gcps)
@@ -147,7 +161,7 @@ def solve_affine_transformation(gcps: List[GroundControlPoint]) -> Dict[str, Any
 
     params = {"a": a, "b": b, "c": c, "d": d, "e": e, "f": f}
 
-    # Calculate residuals
+    # Calculate fitting residuals
     residuals = []
     sq_err_sum = 0.0
     max_res = 0.0
@@ -176,25 +190,70 @@ def solve_affine_transformation(gcps: List[GroundControlPoint]) -> Dict[str, Any
             "residual_x": round(rx, 4),
             "residual_y": round(ry, 4),
             "residual_total": round(tot, 4),
+            "is_check_point": False,
         })
 
-    rmse = math.sqrt(sq_err_sum / N)
+    fitting_rmse = math.sqrt(sq_err_sum / N)
+
+    # Calculate independent check point residuals (if provided)
+    checkpoint_residuals = []
+    cp_sq_err_sum = 0.0
+    max_cp_res = 0.0
+    for cp in icps:
+        pred_x = a * cp.image_u + b * cp.image_v + c
+        pred_y = d * cp.image_u + e * cp.image_v + f
+        rx = cp.ground_x - pred_x
+        ry = cp.ground_y - pred_y
+        tot = math.sqrt(rx**2 + ry**2)
+
+        cp.residual_x = rx
+        cp.residual_y = ry
+        cp.residual_total = tot
+
+        cp_sq_err_sum += tot**2
+        if tot > max_cp_res:
+            max_cp_res = tot
+
+        checkpoint_residuals.append({
+            "gcp_id": cp.gcp_id,
+            "image_u": cp.image_u,
+            "image_v": cp.image_v,
+            "ground_x": cp.ground_x,
+            "ground_y": cp.ground_y,
+            "residual_x": round(rx, 4),
+            "residual_y": round(ry, 4),
+            "residual_total": round(tot, 4),
+            "is_check_point": True,
+        })
+
+    checkpoint_rmse = math.sqrt(cp_sq_err_sum / len(icps)) if icps else None
 
     warnings = []
     if N == 3:
-        warnings.append("Only 3 control points used. Zero degrees of freedom (exact fit; RMSE is unconstrained).")
-    if rmse > 15.0:
-        warnings.append(f"High RMSE ({rmse:.2f} meters). Historical paper shrinkage or coordinate error likely.")
+        warnings.append("Only 3 control points used. Zero degrees of freedom (exact fit; fitting RMSE is unconstrained).")
+    if fitting_rmse > 15.0:
+        warnings.append(f"High fitting RMSE ({fitting_rmse:.2f} meters). Historical paper shrinkage or coordinate error likely.")
+    if checkpoint_rmse is not None:
+        if checkpoint_rmse > 2.50:
+            warnings.append(f"Excessive independent check-point error ({checkpoint_rmse:.2f} meters) exceeds provisional cadastral threshold of 2.50m.")
+        if checkpoint_rmse > 15.0:
+            warnings.append(f"Critical independent check-point error ({checkpoint_rmse:.2f} meters). Transformation model fails ground verification.")
 
-    quality = "EXCELLENT" if rmse < 3.0 else ("GOOD" if rmse < 8.0 else ("FAIR" if rmse < 15.0 else "POOR"))
-    is_acceptable = rmse <= 25.0
+    eval_rmse = checkpoint_rmse if checkpoint_rmse is not None else fitting_rmse
+    quality = "EXCELLENT" if eval_rmse < 3.0 else ("GOOD" if eval_rmse < 8.0 else ("FAIR" if eval_rmse < 15.0 else "POOR"))
+    is_acceptable = (fitting_rmse <= 25.0) and (checkpoint_rmse is None or checkpoint_rmse <= 25.0)
 
     return {
         "parameters": params,
         "residuals": residuals,
-        "rmse_meters": round(rmse, 4),
+        "rmse_meters": round(fitting_rmse, 4),
+        "fitting_rmse_meters": round(fitting_rmse, 4),
         "max_residual_meters": round(max_res, 4),
         "control_points_used": N,
+        "check_points_used": len(icps),
+        "checkpoint_residuals": checkpoint_residuals,
+        "checkpoint_rmse_meters": round(checkpoint_rmse, 4) if checkpoint_rmse is not None else None,
+        "max_checkpoint_residual_meters": round(max_cp_res, 4) if checkpoint_rmse is not None else None,
         "is_acceptable": is_acceptable,
         "quality_assessment": quality,
         "warnings": warnings,

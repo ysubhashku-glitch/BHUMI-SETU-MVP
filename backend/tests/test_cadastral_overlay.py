@@ -476,3 +476,88 @@ def test_report_assembler_cadastral_overlay_integration(db_session, test_tenants
     assert report_data.section_3_cadastral.discrepancy_status is not None
     assert report_data.section_1_cover.data_availability_summary["cadastral_overlay_performed"] is True
     assert "STATUTORY" in report_data.section_3_cadastral.statutory_cadastral_disclaimer.upper()
+
+
+# =============================================================================
+# 8. Pilot Hardening: Independent Check-Points, Transformations & Metadata
+# =============================================================================
+
+def test_affine_georeferencing_independent_checkpoints():
+    """
+    Verifies that fitting residuals and independent check-point (ICP) errors are
+    calculated separately: least squares fits strictly on control points, and
+    independent check points assess true ground verification accuracy.
+    """
+    # 4 Control Points (exact linear transformation: x = 2*u + 500000, y = 2*v + 2800000)
+    ctrl_points = [
+        GroundControlPoint(gcp_id="CP1", image_u=100.0, image_v=100.0, ground_x=500200.0, ground_y=2800200.0),
+        GroundControlPoint(gcp_id="CP2", image_u=900.0, image_v=100.0, ground_x=501800.0, ground_y=2800200.0),
+        GroundControlPoint(gcp_id="CP3", image_u=900.0, image_v=900.0, ground_x=501800.0, ground_y=2801800.0),
+        GroundControlPoint(gcp_id="CP4", image_u=100.0, image_v=900.0, ground_x=500200.0, ground_y=2801800.0),
+    ]
+
+    # 2 Independent Check Points with known small 0.50m ground deviation
+    check_points = [
+        GroundControlPoint(gcp_id="ICP1", image_u=500.0, image_v=500.0, ground_x=501000.5, ground_y=2801000.0),
+        GroundControlPoint(gcp_id="ICP2", image_u=300.0, image_v=700.0, ground_x=500600.0, ground_y=2801400.5),
+    ]
+
+    res = solve_affine_transformation(gcps=ctrl_points, check_points=check_points)
+
+    assert res["control_points_used"] == 4
+    assert res["check_points_used"] == 2
+    # Fitting RMSE on control points is near zero
+    assert res["fitting_rmse_meters"] < 0.001
+    # Check-point RMSE is ~0.50m
+    assert res["checkpoint_rmse_meters"] is not None
+    assert 0.45 < res["checkpoint_rmse_meters"] < 0.55
+    assert len(res["checkpoint_residuals"]) == 2
+    assert res["is_acceptable"] is True
+    assert res["quality_assessment"] == "EXCELLENT"
+
+
+def test_affine_georeferencing_excessive_checkpoint_error():
+    """
+    When independent check points have large residual errors (> 2.50m threshold),
+    an explicit warning is issued and quality is downgraded.
+    """
+    ctrl_points = [
+        GroundControlPoint(gcp_id="CP1", image_u=100.0, image_v=100.0, ground_x=500200.0, ground_y=2800200.0),
+        GroundControlPoint(gcp_id="CP2", image_u=900.0, image_v=100.0, ground_x=501800.0, ground_y=2800200.0),
+        GroundControlPoint(gcp_id="CP3", image_u=900.0, image_v=900.0, ground_x=501800.0, ground_y=2801800.0),
+        GroundControlPoint(gcp_id="CP4", image_u=100.0, image_v=900.0, ground_x=500200.0, ground_y=2801800.0),
+    ]
+
+    # Check points with 4.5m ground shift (exceeds 2.50m threshold)
+    check_points = [
+        GroundControlPoint(gcp_id="ICP_ERR1", image_u=500.0, image_v=500.0, ground_x=501004.5, ground_y=2801000.0),
+        GroundControlPoint(gcp_id="ICP_ERR2", image_u=300.0, image_v=700.0, ground_x=500600.0, ground_y=2801404.5),
+    ]
+
+    res = solve_affine_transformation(gcps=ctrl_points, check_points=check_points)
+
+    assert res["checkpoint_rmse_meters"] > 2.50
+    assert any("Excessive independent check-point error" in w for w in res["warnings"])
+    assert res["quality_assessment"] in ("GOOD", "FAIR")
+
+
+def test_unsupported_transformation_rejection():
+    """Unsupported CRS strings and projections must raise SpatialReferenceError."""
+    with pytest.raises(SpatialReferenceError, match="Unsupported CRS"):
+        validate_crs("EPSG:2154")  # Lambert-93 France
+
+    from shapely.geometry import box
+    b = box(85.0, 25.0, 85.1, 25.1)
+    with pytest.raises(SpatialReferenceError):
+        transform_geometry_to_metric(b, source_crs="EPSG:3857")
+
+
+def test_contradictory_crs_metadata_detection():
+    """Coordinates declared as geographic (EPSG:4326) but with meter ranges (> 180 deg) fail validation."""
+    from shapely.geometry import box
+    # Meter-scale box declared with geographic CRS
+    meter_box = box(500000.0, 2800000.0, 500100.0, 2800100.0)
+    res = validate_and_measure_parcel_geometry(meter_box, input_crs="EPSG:4326", allow_repair=False)
+    # Outside Bihar bounds
+    assert res["is_valid"] is False
+    assert "bounds" in res["validation_error"].lower() or "invalid" in res["validation_error"].lower()

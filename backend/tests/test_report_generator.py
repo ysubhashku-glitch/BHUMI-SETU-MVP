@@ -388,6 +388,85 @@ def test_generate_pdf_bytes_output(
     assert pdf_bytes.startswith(b"%PDF-")  # Valid PDF Magic bytes header
 
 
+def test_generate_pdf_with_property_passport_synthesis(
+    db_session: Session,
+    comprehensive_case: tuple[Case, Parcel],
+    operator_a: User
+):
+    from app.schemas.report import (
+        SectionSynthesisData,
+        SectionDimensionScoreItem,
+        SectionEvidenceGapItem,
+        SectionFindingSummaryItem,
+    )
+    case, parcel = comprehensive_case
+    data = assemble_report_data(
+        db=db_session,
+        case_id=case.case_id,
+        parcel_id=parcel.parcel_id,
+        current_user=operator_a
+    )
+
+    # Attach synthesis data
+    data.section_synthesis = SectionSynthesisData(
+        is_synthesized=True,
+        assessment_number="PASSPORT-2026-PAT-001",
+        version_number=1,
+        assessment_date="2026-10-27 12:00:00 UTC",
+        overall_risk_tier="MEDIUM",
+        composite_priority_score=36.50,
+        dimension_scores=[
+            SectionDimensionScoreItem(
+                dimension="REVENUE_RECORD",
+                dimension_name="Revenue Records & Jamabandi",
+                score=10.0,
+                weight=0.15,
+                status="CONSISTENT",
+                findings_count=0
+            ),
+            SectionDimensionScoreItem(
+                dimension="CADASTRAL_SPATIAL",
+                dimension_name="Cadastral Map & Boundary",
+                score=45.0,
+                weight=0.15,
+                status="REQUIRES_REVIEW",
+                findings_count=1
+            ),
+        ],
+        top_findings=[
+            SectionFindingSummaryItem(
+                finding_id=str(uuid.uuid4()),
+                dimension="CADASTRAL_SPATIAL",
+                severity="MEDIUM",
+                title="Boundary Displacement 1.8m",
+                description="Minor discrepancy between historical CS map and modern survey",
+                supporting_evidence=["Map Sheet 1910", "DILRMP Vector 2022"],
+                review_status="PENDING_REVIEW"
+            )
+        ],
+        evidence_gaps=[
+            SectionEvidenceGapItem(
+                gap_id=str(uuid.uuid4()),
+                dimension="VALUATION_STATUTORY",
+                gap_code="GAP-VAL-NO-ASSESSMENT",
+                title="MVR Schedule Unavailable",
+                description="No verified official circle rate schedule found for mauza",
+                remedy_action="Upload verified Collectorate gazette notification"
+            )
+        ],
+        facts_count=12,
+        inferences_count=4,
+        findings_count=1,
+        gaps_count=1,
+        sha256_snapshot_hash="a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2"
+    )
+
+    pdf_bytes = generate_land_intelligence_pdf(data)
+    assert isinstance(pdf_bytes, bytes)
+    assert len(pdf_bytes) > 1500
+    assert pdf_bytes.startswith(b"%PDF-")
+
+
 # =========================================================================
 # C. End-to-End API Generation, Verification & Download Tests
 # =========================================================================
