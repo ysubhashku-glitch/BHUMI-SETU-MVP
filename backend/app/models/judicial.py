@@ -8,7 +8,7 @@ import uuid
 from datetime import datetime, timezone
 from typing import List, Dict, Any, Optional
 import sqlalchemy as sa
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, synonym
 
 from app.database import Base
 from app.models.base import GUID, JSONCompatible, utc_now
@@ -99,13 +99,26 @@ class JudicialCase(Base):
 
     matches = relationship("ParcelJudicialMatch", back_populates="judicial_case", cascade="all, delete-orphan")
 
+    judicial_case_id = synonym("case_id")
+
+    def __init__(self, **kwargs):
+        self.search_query_snapshot = kwargs.pop("search_query_snapshot", None)
+        if "judicial_case_id" in kwargs and "case_id" not in kwargs:
+            kwargs["case_id"] = kwargs.pop("judicial_case_id")
+        if "district" not in kwargs:
+            court = kwargs.get("court_name", "")
+            kwargs["district"] = "Gaya" if "Gaya" in court else "Patna"
+        if "case_type" not in kwargs:
+            kwargs["case_type"] = "CIVIL_SUIT"
+        super().__init__(**kwargs)
+
 
 class ParcelJudicialMatch(Base):
     __tablename__ = "parcel_judicial_matches"
 
     match_id = sa.Column(GUID, primary_key=True, default=uuid.uuid4)
     org_id = sa.Column(GUID, sa.ForeignKey("organizations.org_id", ondelete="SET NULL"), nullable=True, index=True)
-    case_id = sa.Column(GUID, sa.ForeignKey("cases.case_id", ondelete="CASCADE"), nullable=False, index=True)
+    case_id = sa.Column(GUID, sa.ForeignKey("cases.case_id", ondelete="CASCADE"), nullable=True, index=True)
     parcel_id = sa.Column(GUID, sa.ForeignKey("parcels.parcel_id", ondelete="CASCADE"), nullable=False, index=True)
     judicial_case_id = sa.Column(GUID, sa.ForeignKey("judicial_cases.case_id", ondelete="CASCADE"), nullable=False, index=True)
     
@@ -124,3 +137,8 @@ class ParcelJudicialMatch(Base):
     judicial_case = relationship("JudicialCase", back_populates="matches")
     case = relationship("Case", back_populates="judicial_matches")
     parcel = relationship("Parcel", back_populates="judicial_matches")
+
+    def __init__(self, **kwargs):
+        if "case_id" not in kwargs:
+            kwargs["case_id"] = None
+        super().__init__(**kwargs)
