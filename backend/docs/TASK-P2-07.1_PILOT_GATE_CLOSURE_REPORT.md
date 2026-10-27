@@ -20,18 +20,19 @@ Building upon the code-hardening and spatial metrology delivered in TASK-P2-07, 
 | :--- | :--- |
 | **Repository URL** | [https://github.com/ysubhashku-glitch/BHUMI-SETU-MVP.git](https://github.com/ysubhashku-glitch/BHUMI-SETU-MVP.git) |
 | **Target Branch** | `main` |
-| **Reported Code Milestone** | Commit [`4d1d616`](https://github.com/ysubhashku-glitch/BHUMI-SETU-MVP/commit/4d1d616) (`fix(spatial): enforce contradictory CRS degree/meter bounds`) |
-| **Code Workflow Run** | [Run 40473839790](https://github.com/ysubhashku-glitch/BHUMI-SETU-MVP/actions/runs/40473839790) (`status: completed` • **`conclusion: success`**) |
-| **Documentation Sync Commit** | Commit [`1e3388b`](https://github.com/ysubhashku-glitch/BHUMI-SETU-MVP/commit/1e3388b) (`docs(report): record verified CI Run 40473839790`) |
-| **Documentation Workflow Run** | [Run 40474545829](https://github.com/ysubhashku-glitch/BHUMI-SETU-MVP/actions/runs/40474545829) (`status: completed` • **`conclusion: success`**) |
-| **Host Regression Suite Passed** | **314 PASSED**, **9 SKIPPED**, **0 FAILED**, **0 ERRORS** (56.51s) |
+| **Prior Reported Milestone** | TASK-P2-07 (`1e3388b` / `4d1d616`) |
+| **Final Validated Release SHA** | Commit [`798381c`](https://github.com/ysubhashku-glitch/BHUMI-SETU-MVP/commit/798381c) (`feat(audit): complete TASK-P2-07.1 pilot gate closure`) |
+| **Final Validated Workflow Run** | [Run 40482137233](https://github.com/ysubhashku-glitch/BHUMI-SETU-MVP/actions/runs/40482137233) (`status: completed` • **`conclusion: success`**) |
+| **Prior Green Workflow Runs** | [Run 40473839790](https://github.com/ysubhashku-glitch/BHUMI-SETU-MVP/actions/runs/40473839790) (Code `4d1d616`) & [Run 40474545829](https://github.com/ysubhashku-glitch/BHUMI-SETU-MVP/actions/runs/40474545829) (Docs `1e3388b`) |
+| **Host Regression Suite Passed** | **315 PASSED**, **9 SKIPPED**, **0 FAILED**, **0 ERRORS** (63.87s) |
 | **Alembic Database Head** | Single linear head [`c4d5e6f7a8b9`](file:///c:/Users/ysubh/OneDrive/Desktop/BHUMI%20SETU/backend/alembic/versions/c4d5e6f7a8b9_add_mutation_case_fields.py) on PostGIS 16 |
-| **Live Staging Integration Tests** | **9 PASSED**, **0 FAILED** (3.65s) |
-| **18-Step Staging Smoke Test** | **1 PASSED**, **0 FAILED** (3.10s) |
+| **Live Staging Integration Tests** | **9 PASSED**, **0 FAILED** (3.05s) |
+| **18-Step Staging Smoke Test** | **1 PASSED**, **0 FAILED** (2.40s) |
 | **Container State Persistence** | **PASSED** (PostgreSQL & MinIO data retained across container restart) |
 
-### 1.2 Verification of Commit 1e3388b
-Commit `1e3388b` was audited via `git diff 4d1d616..1e3388b`. It modified solely `backend/docs/TASK-P2-07_CONTROLLED_PILOT_READINESS_REPORT.md` (6 insertions, 6 deletions), synchronizing the reported CI run ID and test count to match actual CI execution. No code, configuration, migration, or Dockerfile changes were included. Workflow Run `40474545829` confirmed that the repository remained 100% green.
+### 1.2 Verification of Lineage and Code Changes
+- **Commit `1e3388b`:** Audited via `git diff 4d1d616..1e3388b`. Modified solely `TASK-P2-07_CONTROLLED_PILOT_READINESS_REPORT.md` (6 insertions, 6 deletions), synchronizing reported CI run ID and test count to match actual CI execution. No code, configuration, migration, or Dockerfile changes were included. Workflow Run `40474545829` confirmed 100% green status.
+- **Commit `798381c`:** Implemented synthetic fixture exclusion hardening in `reconciliation_engine.py` (covering `MOCK_PROVIDER` and setting `is_blocking: True` on `GAP-VAL-SYNTHETIC-DATA-EXCLUDED`), added regression test `test_reconciliation_mock_provider_exclusion` in `test_property_passport_synthesis.py` (expanding suite to 315 passed tests), and created this acceptance report. Workflow Run `40482137233` confirmed 100% green status across all 17 stages.
 
 ---
 
@@ -133,7 +134,7 @@ A critical audit finding was reconciled regarding the Coordinate Reference Syste
 
 | Evaluation Domain | Verification Criteria | Status | Authoritative Evidence & Justification |
 | :--- | :--- | :---: | :--- |
-| **1. CI & Migration Integrity** | Host regression suite passing; linear Alembic migrations on PostGIS 16; containerized integration; restart persistence. | **`PASS`** | 314 host tests passed (56.51s), 10 migrations applied cleanly to head `c4d5e6f7a8b9`, 9 staging integration tests passed, persistence verified across restart (Runs `40473839790` and `40474545829`). |
+| **1. CI & Migration Integrity** | Host regression suite passing; linear Alembic migrations on PostGIS 16; containerized integration; restart persistence. | **`PASS`** | 315 host tests passed (63.87s), 10 migrations applied cleanly to head `c4d5e6f7a8b9`, 9 staging integration tests passed (3.05s), 18-step smoke test passed (2.40s), persistence verified across restart (Run `40482137233`). |
 | **2. Security & Tenant Isolation** | Multi-tenant org isolation; role-based access; upload magic-byte verification; SSRF outbound allowlists. | **`PASS`** | Verified by unit and integration tests. Cross-tenant queries rejected with HTTP 403/404; Zip Slip archives blocked. |
 | **3. External Credential Remediation** | Exposed GitHub credential revoked/rotated via authorized provider. | **`BLOCKED`** | Repository code and scripts sanitized, but operator confirmation of external token revocation is outstanding. |
 | **4. Official MVR Provenance** | Production calculations use only verified Collectorate gazette notifications; synthetic data blocked. | **`BLOCKED`** | Synthetic data is strictly blocked with `is_blocking: True` (`GAP-VAL-SYNTHETIC-DATA-EXCLUDED`). However, verified Collectorate gazettes for pilot mauzas have not yet been ingested by operators. |
