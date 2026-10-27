@@ -97,8 +97,8 @@ class MutationReconciliationEngine:
             # 3. Check for Unlinked / Unresolved parcels
             if not mc.parcel_id:
                 has_active_resolution = db.query(MutationEntityResolution).filter(
-                    MutationEntityResolution.mutation_case_id == mc.mutation_case_id,
-                    MutationEntityResolution.review_status == "CONFIRMED_ASSOCIATED",
+                    MutationEntityResolution.mutation_id == mc.mutation_id,
+                    MutationEntityResolution.is_confirmed == True,
                 ).first()
                 if not has_active_resolution:
                     records_unresolved += 1

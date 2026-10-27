@@ -215,7 +215,7 @@ class ExtractedField(Base):
 
     field_id = sa.Column(GUID, primary_key=True, default=uuid.uuid4)
     document_id = sa.Column(GUID, sa.ForeignKey("documents.document_id", ondelete="CASCADE"), nullable=False, index=True)
-    version_id = sa.Column(GUID, sa.ForeignKey("document_versions.version_id", ondelete="CASCADE"), nullable=False, index=True)
+    version_id = sa.Column(GUID, sa.ForeignKey("document_versions.version_id", ondelete="CASCADE"), nullable=True, index=True)
     page_id = sa.Column(GUID, sa.ForeignKey("document_pages.page_id", ondelete="SET NULL"), nullable=True)
     evidence_span_id = sa.Column(GUID, sa.ForeignKey("evidence_spans.span_id", ondelete="SET NULL"), nullable=True)
     
@@ -239,3 +239,16 @@ class ExtractedField(Base):
     version = relationship("DocumentVersion", back_populates="extracted_fields")
     evidence_span = relationship("EvidenceSpan", back_populates="extracted_fields")
     candidate_claims = relationship("CandidateClaim", back_populates="extracted_field")
+
+    extracted_value = synonym("raw_value")
+    confidence_score = synonym("confidence")
+
+    def __init__(self, **kwargs):
+        self.org_id = kwargs.pop("org_id", None)
+        if "extracted_value" in kwargs and "raw_value" not in kwargs:
+            kwargs["raw_value"] = kwargs.pop("extracted_value")
+        if "confidence_score" in kwargs and "confidence" not in kwargs:
+            kwargs["confidence"] = kwargs.pop("confidence_score")
+        if "version_id" not in kwargs:
+            kwargs["version_id"] = None
+        super().__init__(**kwargs)

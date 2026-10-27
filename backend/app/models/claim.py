@@ -48,7 +48,7 @@ class Claim(Base):
     claim_id = sa.Column(GUID, primary_key=True, default=uuid.uuid4)
     case_id = sa.Column(GUID, sa.ForeignKey("cases.case_id", ondelete="CASCADE"), nullable=False, index=True)
     parcel_id = sa.Column(GUID, sa.ForeignKey("parcels.parcel_id", ondelete="CASCADE"), nullable=False, index=True)
-    evidence_id = sa.Column(GUID, sa.ForeignKey("evidence.evidence_id", ondelete="CASCADE"), nullable=False, index=True)
+    evidence_id = sa.Column(GUID, sa.ForeignKey("evidence.evidence_id", ondelete="CASCADE"), nullable=True, index=True)
     
     subject_entity_type = sa.Column(sa.String(32), nullable=False) # 'PARCEL', 'PARTY'
     subject_id = sa.Column(GUID, nullable=False, index=True)
@@ -75,6 +75,10 @@ class Claim(Base):
 
     def __init__(self, **kwargs):
         org_id = kwargs.pop("org_id", None)
+        if "subject_entity_type" not in kwargs:
+            kwargs["subject_entity_type"] = "PARCEL"
+        if "subject_id" not in kwargs:
+            kwargs["subject_id"] = kwargs.get("parcel_id") or kwargs.get("case_id") or uuid.uuid4()
         super().__init__(**kwargs)
         if org_id:
             self.org_id = org_id

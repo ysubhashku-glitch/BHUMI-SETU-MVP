@@ -462,6 +462,33 @@ class MutationEntityResolution(Base):
     case = relationship("Case")
     reviewer = relationship("User")
 
+    mutation_case_id = synonym("mutation_id")
+
+    @hybrid_property
+    def review_status(self) -> str:
+        return getattr(self, "_review_status", None) or ("CONFIRMED_ASSOCIATED" if self.is_confirmed else "PENDING_REVIEW")
+
+    @review_status.setter
+    def review_status(self, val: str):
+        self._review_status = val
+        self.is_confirmed = (val == "CONFIRMED_ASSOCIATED")
+
+    def __init__(self, **kwargs):
+        if "mutation_case_id" in kwargs and "mutation_id" not in kwargs:
+            kwargs["mutation_id"] = kwargs.pop("mutation_case_id")
+        rev_status = kwargs.pop("review_status", None)
+        if rev_status:
+            self.review_status = rev_status
+            kwargs["is_confirmed"] = (rev_status == "CONFIRMED_ASSOCIATED")
+        if "matching_details" not in kwargs:
+            details = {}
+            for k in ["identifiers_compared", "match_outcome", "explanation"]:
+                if k in kwargs:
+                    details[k] = kwargs.pop(k)
+            if details:
+                kwargs["matching_details"] = details
+        super().__init__(**kwargs)
+
 
 class MutationReconciliationRun(Base):
     """

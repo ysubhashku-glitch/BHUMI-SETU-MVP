@@ -38,8 +38,15 @@ def upgrade() -> None:
     op.add_column('mutation_reconciliation_runs', sa.Column('records_rejected', sa.Integer(), nullable=True, server_default='0'))
     op.add_column('mutation_reconciliation_runs', sa.Column('records_unresolved', sa.Integer(), nullable=True, server_default='0'))
 
+    # 4. claims and extracted_fields relaxations
+    op.alter_column('claims', 'evidence_id', existing_type=app.models.base.GUID(length=36), nullable=True)
+    op.alter_column('extracted_fields', 'version_id', existing_type=app.models.base.GUID(length=36), nullable=True)
+
 
 def downgrade() -> None:
+    op.alter_column('extracted_fields', 'version_id', existing_type=app.models.base.GUID(length=36), nullable=False)
+    op.alter_column('claims', 'evidence_id', existing_type=app.models.base.GUID(length=36), nullable=False)
+
     op.drop_column('mutation_reconciliation_runs', 'records_unresolved')
     op.drop_column('mutation_reconciliation_runs', 'records_rejected')
     op.drop_column('mutation_reconciliation_runs', 'records_duplicate')
