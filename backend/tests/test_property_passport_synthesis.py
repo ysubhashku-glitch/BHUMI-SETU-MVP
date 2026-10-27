@@ -438,11 +438,77 @@ def test_reconciliation_synthetic_mvr_exclusion_gate(
 
     val_gaps = [g for g in result_prod["evidence_gaps"] if g["gap_code"] == "GAP-VAL-SYNTHETIC-DATA-EXCLUDED"]
     assert len(val_gaps) == 1
+    assert val_gaps[0]["is_blocking"] is True
 
     # 2. Explicit Fixture Inclusion Mode: Admitted
     result_fixture = engine.reconcile_parcel_evidence(db_session, sample_parcel, sample_case, include_synthetic_fixtures=True)
     val_facts_fixture = [f for f in result_fixture["facts"] if f["subsystem"] == "VALUATION"]
     assert len(val_facts_fixture) == 1
+
+
+def test_reconciliation_mock_provider_exclusion(
+    db_session: Session,
+    tenant_a: Organization,
+    sample_parcel: Parcel,
+    sample_case: Case,
+):
+    """
+    Guarantees that schedules with source_provider='MOCK_PROVIDER' are strictly excluded
+    from production calculations even when verification_status is marked 'VERIFIED_OFFICIAL'
+    and schedule_code does not contain 'mock' or 'synth'.
+    """
+    sched = MVRSchedule(
+        org_id=tenant_a.org_id,
+        schedule_code="MVR-BR-PAT-DAN-KOT-AGR-NH",
+        district="PATNA",
+        registration_office="Danapur Sub-Registry",
+        anchal_circle="Danapur",
+        mauza="Kotwa",
+        jurisdiction_type=JurisdictionType.RURAL,
+        property_category=PropertyCategory.AGRICULTURAL,
+        road_category=RoadCategory.MAIN_ROAD_NH_SH,
+        rate_per_decimal=85000.0,
+        verification_status="VERIFIED_OFFICIAL",
+        source_provider="MOCK_PROVIDER",
+        source_gazette_reference="Patna District Gazette Notification No. 412/Reg-2025",
+    )
+    db_session.add(sched)
+    db_session.flush()
+
+    val = PropertyValuation(
+        org_id=tenant_a.org_id,
+        case_id=sample_case.case_id,
+        parcel_id=sample_parcel.parcel_id,
+        schedule_id=sched.schedule_id,
+        total_area_decimal=100.0,
+        input_area_value=1.0,
+        unit_circle_rate=85000.0,
+        calculated_land_value=8500000.0,
+        calculated_structure_value=0.0,
+        total_government_valuation=8500000.0,
+        assessment_base=8500000.0,
+        stamp_duty_rate_percent=6.0,
+        stamp_duty_amount=510000.0,
+        registration_fee_rate_percent=2.0,
+        registration_fee_amount=170000.0,
+        total_statutory_charges=680000.0,
+        discrepancy_status=DiscrepancyStatus.NO_DISCREPANCY_DETECTED,
+    )
+    db_session.add(val)
+    db_session.commit()
+
+    engine = EvidenceReconciliationEngine()
+
+    # In production mode: MOCK_PROVIDER is strictly excluded and triggers blocking gap
+    prod_res = engine.reconcile_parcel_evidence(db_session, sample_parcel, sample_case, include_synthetic_fixtures=False)
+    assert not any(f["subsystem"] == "VALUATION" for f in prod_res["facts"])
+    gap = next((g for g in prod_res["evidence_gaps"] if g["gap_code"] == "GAP-VAL-SYNTHETIC-DATA-EXCLUDED"), None)
+    assert gap is not None
+    assert gap["is_blocking"] is True
+
+    # In fixture mode: admitted
+    fixture_res = engine.reconcile_parcel_evidence(db_session, sample_parcel, sample_case, include_synthetic_fixtures=True)
+    assert any(f["subsystem"] == "VALUATION" for f in fixture_res["facts"])
 
 
 def test_reconciliation_unverified_ocr_extraction_not_promoted(

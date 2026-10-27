@@ -616,9 +616,12 @@ class EvidenceReconciliationEngine:
                 sched_ver = sched.verification_status if sched else "UNVERIFIED"
 
                 # Upstream validation gate: Synthetic data handling
+                source_prov = (getattr(sched, "source_provider", "") or "").upper() if sched else ""
                 is_synthetic = (
                     (sched_ver in ("SYNTHETIC", "SYNTHETIC_MOCK", "SYNTHETIC_FIXTURE"))
-                    or (sched and getattr(sched, "source_provider", "") in ("SYNTHETIC_MOCK", "SYNTHETIC_FIXTURE"))
+                    or (sched and source_prov in ("MOCK_PROVIDER", "SYNTHETIC_MOCK", "SYNTHETIC_FIXTURE"))
+                    or (sched and "MOCK" in source_prov)
+                    or (sched and "SYNTH" in source_prov)
                     or ("mock" in (sched.schedule_code.lower() if sched else ""))
                     or ("synth" in (sched.schedule_code.lower() if sched else ""))
                 )
@@ -629,7 +632,7 @@ class EvidenceReconciliationEngine:
                         "description": f"MVR valuation schedule '{sched.schedule_code if sched else 'UNKNOWN'}' is synthetic and excluded from production assessment.",
                         "impact_on_assessment": "Valuation relies on synthetic fixtures; official published Collectorate schedule required.",
                         "remedy_action": "Import verified official MVR circle rate schedule for this mauza.",
-                        "is_blocking": False,
+                        "is_blocking": True,
                     })
                     continue  # Exclude synthetic fixture from production assessment per rule 6B
 
