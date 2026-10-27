@@ -222,6 +222,7 @@ A standard operating procedure (SOP) checklist for supervised pilot deployments:
 | Modified File | Architectural Enhancement |
 | :--- | :--- |
 | `backend/app/services/spatial/georeferencing.py` | Added independent check-point (ICP) error evaluation to `solve_affine_transformation`; separated fitting residuals from check-point RMSE; added provisional 2.50m cadastral threshold checks. |
+| `backend/app/services/spatial/crs.py` | Added contradictory CRS metadata detection in `transform_geometry_to_metric` and `transform_geometry_to_wgs84` (rejects metric coordinates labeled as EPSG:4326 degrees and degree coordinates labeled as EPSG:32645 meters). |
 | `backend/app/services/pdf_report_generator.py` | Implemented complete Property Passport Synthesis section in PDF reports (Executive Risk Tier badge, Review Priority Index, 8-dimension table, explicit evidence gaps, statutory caveats). |
 | `backend/tests/test_cadastral_overlay.py` | Added 4 dedicated tests verifying independent check-point separation, excessive check-point errors (> 2.50m), unsupported CRS rejections, and contradictory coordinate metadata detection. |
 | `backend/tests/test_report_generator.py` | Added end-to-end PDF generation test verifying that `generate_land_intelligence_pdf` properly renders Property Passport synthesis when present. |

@@ -178,6 +178,13 @@ def transform_geometry_to_metric(geom: Union[Polygon, MultiPolygon], source_crs:
     if clean_crs == "EPSG:32645":
         return geom
     elif clean_crs == "EPSG:4326":
+        minx, miny, maxx, maxy = geom.bounds
+        if minx < -180.0 or maxx > 180.0 or miny < -90.0 or maxy > 90.0:
+            raise SpatialReferenceError(
+                f"Contradictory CRS metadata: coordinates [{minx:.1f}, {miny:.1f}, {maxx:.1f}, {maxy:.1f}] "
+                f"exceed valid geographic degrees [-180, 180] / [-90, 90] for {clean_crs}. "
+                f"Projected metric coordinates cannot be transformed as geographic degrees."
+            )
         def _forward(x, y, z=None):
             easting, northing = project_wgs84_to_utm45n(lat=y, lon=x)
             return easting, northing
@@ -194,6 +201,12 @@ def transform_geometry_to_wgs84(geom: Union[Polygon, MultiPolygon], source_crs: 
     if clean_crs == "EPSG:4326":
         return geom
     elif clean_crs == "EPSG:32645":
+        minx, miny, maxx, maxy = geom.bounds
+        if -180.0 <= minx and maxx <= 180.0 and -90.0 <= miny and maxy <= 90.0:
+            raise SpatialReferenceError(
+                f"Contradictory CRS metadata: coordinates [{minx:.4f}, {miny:.4f}, {maxx:.4f}, {maxy:.4f}] "
+                f"appear to be geographic degrees [-180, 180] / [-90, 90], but CRS was declared as {clean_crs} (projected meters)."
+            )
         def _inverse(x, y, z=None):
             lat, lon = unproject_utm45n_to_wgs84(easting=x, northing=y)
             return lon, lat

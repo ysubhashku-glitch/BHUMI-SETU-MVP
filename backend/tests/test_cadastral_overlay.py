@@ -557,7 +557,10 @@ def test_contradictory_crs_metadata_detection():
     from shapely.geometry import box
     # Meter-scale box declared with geographic CRS
     meter_box = box(500000.0, 2800000.0, 500100.0, 2800100.0)
-    res = validate_and_measure_parcel_geometry(meter_box, input_crs="EPSG:4326", allow_repair=False)
-    # Outside Bihar bounds
-    assert res["is_valid"] is False
-    assert "bounds" in res["validation_error"].lower() or "invalid" in res["validation_error"].lower()
+    with pytest.raises(SpatialReferenceError, match="Contradictory CRS metadata"):
+        validate_and_measure_parcel_geometry(meter_box, input_crs="EPSG:4326", allow_repair=False)
+
+    # Degree-scale box declared with projected metric CRS (EPSG:32645)
+    degree_box = box(85.045, 25.612, 85.048, 25.615)
+    with pytest.raises(SpatialReferenceError, match="Contradictory CRS metadata"):
+        validate_and_measure_parcel_geometry(degree_box, input_crs="EPSG:32645", allow_repair=False)
